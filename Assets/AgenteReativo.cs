@@ -1,178 +1,108 @@
-using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class AgenteReativo : MonoBehaviour
 {
-    public Slider velocidadeSlider;
-
-    private string[] acoes = { "voltar", "mover", "pegar", "atirar" };
-    private float tempoProximaAcao = 0f;
+    public float velocidade = 0.3f;
+    private TileManager tileManager;
+    private Slider velocidadeSlider;
 
     void Start()
     {
-        if (velocidadeSlider == null)
+        tileManager = TileManager.instancia;
+
+        GameObject sliderObj = GameObject.FindWithTag("VelocidadeSlider");
+        if (sliderObj != null)
         {
-            GameObject sliderObj = GameObject.Find("VelocidadeSlider");
-            if (sliderObj != null)
+            velocidadeSlider = sliderObj.GetComponent<Slider>();
+            velocidade = velocidadeSlider.value;
+        }
+
+        StartCoroutine(ComportamentoReativo());
+    }
+
+    IEnumerator ComportamentoReativo()
+    {
+        while (true)
+        {
+            velocidade = velocidadeSlider != null ? velocidadeSlider.value : velocidade;
+
+            Vector3 posAtual = transform.position;
+
+            // Verifica se há poço ou wumpus
+            Collider[] colisores = Physics.OverlapSphere(posAtual, 0.1f);
+            foreach (var col in colisores)
             {
-                velocidadeSlider = sliderObj.GetComponent<Slider>();
-            }
-        }
-    }
-
-    void Update()
-    {
-        if (Time.time < tempoProximaAcao) return;
-
-        tempoProximaAcao = Time.time + velocidadeSlider.value;
-
-        if (Detectou("brisa") || Detectou("fedor") || Detectou("brilho"))
-        {
-            string acao = EscolherAcaoAleatoria();
-            ExecutarAcao(acao);
-        }
-        else
-        {
-            Explorar();
-        }
-    }
-
-    bool Detectou(string tipo)
-    {
-        Collider[] colisores = Physics.OverlapSphere(transform.position, 0.1f);
-        foreach (var col in colisores)
-        {
-            if (col.CompareTag(tipo))
-                return true;
-        }
-        return false;
-    }
-
-    string EscolherAcaoAleatoria()
-    {
-        int index = Random.Range(0, acoes.Length);
-        return acoes[index];
-    }
-
-    void ExecutarAcao(string acao)
-    {
-        switch (acao)
-        {
-            case "voltar":
-                transform.position += Vector3.back;
-                break;
-            case "mover":
-                transform.position += DirecaoAleatoria();
-                VerificarMortePorPoco();
-                VerificarMortePorWumpus();
-                break;
-            case "pegar":
-                // Verifica se há brilhoouro na posição atual
-                Collider[] itens = Physics.OverlapSphere(transform.position, 0.1f);
-                foreach (var col in itens)
+                if (col.CompareTag("poço"))
                 {
-                    if (col.CompareTag("brilhoouro") || col.CompareTag("ouro"))
+                    Debug.Log(" Agente morreu ao cair em um poço!");
+                    Destroy(gameObject);
+                    yield break;
+                }
+                else if (col.CompareTag("wumpus"))
+                {
+                    Debug.Log(" Agente foi devorado pelo Wumpus!");
+                    Destroy(gameObject);
+                    yield break;
+                }
+                else if (col.CompareTag("brilho"))
+                {
+                    int acao = Random.Range(0, 4); // 0 = voltar, 1 = mover, 2 = pegar, 3 = atirar
+                    if (acao == 2)
                     {
-                        Debug.Log("Agente pegou o ouro!");
+                        Debug.Log(" Agente pegou o ouro!");
                         Destroy(col.gameObject);
                     }
                 }
-                break;
-
-                break;
-            case "atirar":
-                TentarAtirarNoWumpus();
-                break;
-        }
-    }
-
-    void Explorar()
-    {
-        transform.position += DirecaoAleatoria();
-        VerificarMortePorPoco();
-        VerificarMortePorWumpus();
-    }
-
-    void VerificarMortePorPoco()
-    {
-        Collider[] colisores = Physics.OverlapSphere(transform.position, 0.1f);
-        foreach (var col in colisores)
-        {
-            if (col.CompareTag("poco"))
-            {
-                Debug.Log("Agente caiu no poço e morreu!");
-                Destroy(gameObject);
-                return;
             }
-        }
-    }
 
-    void VerificarMortePorWumpus()
-    {
-        Collider[] colisores = Physics.OverlapSphere(transform.position, 0.1f);
-        foreach (var col in colisores)
-        {
-            if (col.CompareTag("wumpus"))
+            // Verifica se há Wumpus ao redor para tentar atirar
+            Vector3[] direcoes = {
+                Vector3.forward * 1.7f,
+                Vector3.back * 1.7f,
+                Vector3.left * 1.7f,
+                Vector3.right * 1.7f
+            };
+
+            foreach (var dir in direcoes)
             {
-                Debug.Log("Agente foi devorado pelo Wumpus!");
-                Destroy(gameObject);
-                return;
-            }
-        }
-    }
-
-    void TentarAtirarNoWumpus()
-    {
-        Vector3[] direcoes = {
-            Vector3.forward,
-            Vector3.back,
-            Vector3.left,
-            Vector3.right
-        };
-
-        foreach (var dir in direcoes)
-        {
-            Vector3 alvo = transform.position + dir;
-            Collider[] colisores = Physics.OverlapSphere(alvo, 0.1f);
-            foreach (var col in colisores)
-            {
-                if (col.CompareTag("wumpus"))
+                Vector3 checar = posAtual + dir;
+                Collider[] vizinhos = Physics.OverlapSphere(checar, 0.1f);
+                foreach (var col in vizinhos)
                 {
-                    Debug.Log("Wumpus foi morto por uma flecha!");
-                    Destroy(col.gameObject);
-                    return;
+                    if (col.CompareTag("wumpus"))
+                    {
+                        int acao = Random.Range(0, 4);
+                        if (acao == 3) // atirar
+                        {
+                            Debug.Log(" Agente matou o Wumpus com uma flecha!");
+                            Destroy(col.gameObject);
+                        }
+                    }
                 }
             }
+
+            // Movimento aleatório apenas para tiles válidas
+            List<Vector3> vizinhosValidos = new List<Vector3>();
+            foreach (var dir in direcoes)
+            {
+                Vector3 destino = posAtual + dir;
+                if (tileManager.tilesValidas.Contains(destino))
+                {
+                    vizinhosValidos.Add(destino);
+                }
+            }
+
+            if (vizinhosValidos.Count > 0)
+            {
+                Vector3 destinoFinal = vizinhosValidos[Random.Range(0, vizinhosValidos.Count)];
+                transform.position = destinoFinal;
+                Debug.Log(" Agente se moveu para " + destinoFinal);
+            }
+
+            yield return new WaitForSeconds(velocidade);
         }
     }
-
-    Vector3 DirecaoAleatoria()
-    {
-        Vector2Int posAtual = new Vector2Int(Mathf.RoundToInt(transform.position.x), Mathf.RoundToInt(transform.position.z));
-        List<Vector2Int> vizinhos = new List<Vector2Int>()
-    {
-        posAtual + Vector2Int.up,
-        posAtual + Vector2Int.down,
-        posAtual + Vector2Int.left,
-        posAtual + Vector2Int.right
-    };
-
-        List<Vector2Int> validos = new List<Vector2Int>();
-
-        foreach (var pos in vizinhos)
-        {
-            if (TileManager.instancia.TileExiste(pos))
-                validos.Add(pos);
-        }
-
-        if (validos.Count > 0)
-        {
-            Vector2Int escolhido = validos[Random.Range(0, validos.Count)];
-            return new Vector3(escolhido.x, transform.position.y, escolhido.y) - transform.position;
-        }
-
-        return Vector3.zero; // sem vizinhos válidos
-    }
-
 }
