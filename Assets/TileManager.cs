@@ -3,25 +3,49 @@ using UnityEngine;
 
 public class TileManager : MonoBehaviour
 {
-    //  O GridGenerator procura
     public static TileManager instancia;
 
-    // Lista de posições válidas das tiles
-    public List<Vector3> tilesValidas = new List<Vector3>();
+    private Dictionary<Vector2Int, GameObject> tilesValidas = new Dictionary<Vector2Int, GameObject>();
 
-    void Awake()
+    private void Awake()
     {
-        instancia = this;
+        if (instancia == null)
+        {
+            instancia = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
-    // Método para registrar a posição de uma tile válida
-    public void RegistrarTile(Vector2Int pos)
+
+    /// Registra a posição de uma tile válida no dicionário.
+   
+    public void RegistrarTile(Vector2Int posicao, GameObject tile)
     {
-        // Ajuste de posição para multiplicar pelo tamanho padrão das tiles
-        Vector3 tilePos = new Vector3(pos.x * 1.7f, 0, pos.y * 1.7f);
-        if (!tilesValidas.Contains(tilePos))
+        if (!tilesValidas.ContainsKey(posicao))
         {
-            tilesValidas.Add(tilePos);
+            tilesValidas.Add(posicao, tile);
         }
+    }
+
+
+ 
+    /// Retorna a tile GameObject em determinada posição, se existir.
+    public GameObject ObterTileEm(Vector2Int posicao)
+    {
+        if (tilesValidas.ContainsKey(posicao))
+        {
+            return tilesValidas[posicao];
+        }
+        return null;
+    }
+
+
+    /// Retorna todas as posições válidas registradas.
+    public List<Vector2Int> ObterTodasAsPosicoes()
+    {
+        return new List<Vector2Int>(tilesValidas.Keys);
     }
 }

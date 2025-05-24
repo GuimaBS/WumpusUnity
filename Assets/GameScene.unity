@@ -835,7 +835,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27f9027795b5a534987cc8085c2d1214, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tilesValidas: []
 --- !u!4 &475401380
 Transform:
   m_ObjectHideFlags: 0
@@ -1942,7 +1941,7 @@ GameObject:
   - component: {fileID: 1377371003}
   m_Layer: 5
   m_Name: VelocidadeSlider
-  m_TagString: 'VelocidadeSlider '
+  m_TagString: VelocidadeSlider
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
@@ -2560,7 +2559,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ddf759d04e263440a1f0d08bc6a8456, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  velocidade: 0.3
 --- !u!4 &1923897134 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4383001266608692150, guid: 7fe0460496a53514c8ca339c4bc2fc23, type: 3}
@@ -2646,7 +2644,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ddf759d04e263440a1f0d08bc6a8456, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  velocidade: 0.3
 --- !u!1001 &1391269333787102405
 PrefabInstance:
   m_ObjectHideFlags: 0

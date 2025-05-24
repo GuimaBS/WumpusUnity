@@ -49,7 +49,7 @@ public class GridGenerator : MonoBehaviour
                 GameObject prefab = isPoco ? tilepPrefab : tilePrefab;
                 GameObject tile = Instantiate(prefab, pos, Quaternion.identity, transform);
                 Vector2Int posicaoTile = new Vector2Int(x, y);
-                TileManager.instancia.RegistrarTile(posicaoTile);
+                TileManager.instancia.RegistrarTile(new Vector2Int(x, y), tile);
 
                 grid[x, y] = new TileInfo
                 {
