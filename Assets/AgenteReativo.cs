@@ -24,12 +24,39 @@ public class AgenteReativo : MonoBehaviour
 
     private IEnumerator ComportamentoReativo()
     {
+        // 1. Converter posição do agente para a posição lógica da tile
+        Vector2Int posicaoAgente = new Vector2Int(
+            Mathf.FloorToInt(transform.position.x / 1.7f),
+            Mathf.FloorToInt(transform.position.z / 1.7f)
+        );
+
+        // 2. Comparar com a posição salva do Wumpus
+        if (posicaoAgente == GridGenerator.posicaoWumpus)
+        {
+            Debug.Log("O agente foi morto pelo Wumpus.");
+            Destroy(gameObject);
+            yield break;
+        }
+
         while (true)
         {
             if (velocidadeSlider != null)
                 velocidade = velocidadeSlider.value;
 
             yield return new WaitForSeconds(velocidade);
+
+            // Verifica se morreu ao pisar no Wumpus
+            Vector2Int posicaoAtual = new Vector2Int(
+                Mathf.FloorToInt(transform.position.x / 1.7f),
+                Mathf.FloorToInt(transform.position.z / 1.7f)
+            );
+
+            if (posicaoAtual == GridGenerator.posicaoWumpus)
+            {
+                Debug.Log("O agente foi morto pelo Wumpus!");
+                Destroy(gameObject);
+                yield break;
+            }
 
             Vector3 pos = transform.position;
             int tileX = Mathf.RoundToInt(pos.x / 1.7f);
@@ -38,21 +65,15 @@ public class AgenteReativo : MonoBehaviour
 
             GameObject tile = tileManager.ObterTileEm(posTile);
             if (tile == null)
-                yield break; // Se tile inválida, sai do ciclo sem log
+                yield break;
 
-            // Verifica colisão com poço ou wumpus
-            Collider[] colisores = Physics.OverlapSphere(transform.position, 0.3f);
+            // Verifica colisão com poço
+            Collider[] colisores = Physics.OverlapSphere(transform.position + Vector3.up * 0.25f, 0.5f);
             foreach (var col in colisores)
             {
                 if (col.CompareTag("poco"))
                 {
                     Debug.Log("O agente caiu em um poço e morreu.");
-                    Destroy(gameObject);
-                    yield break;
-                }
-                if (col.CompareTag("wumpus"))
-                {
-                    Debug.Log("O agente pisou no Wumpus e morreu.");
                     Destroy(gameObject);
                     yield break;
                 }
@@ -127,7 +148,25 @@ public class AgenteReativo : MonoBehaviour
             if (direcoesValidas.Count > 0)
             {
                 Vector3 direcaoEscolhida = direcoesValidas[Random.Range(0, direcoesValidas.Count)];
-                transform.position += direcaoEscolhida;
+    Vector3 destino = transform.position + direcaoEscolhida;
+
+    // Calcula rotação para a direção do destino
+    Quaternion rotacaoAlvo = Quaternion.LookRotation(direcaoEscolhida, Vector3.up);
+
+    // Suaviza a rotação (ajuste a velocidade conforme desejado)
+    float tempoRotacao = 0.15f;
+    float t = 0f;
+    Quaternion rotacaoInicial = transform.rotation;
+
+    while (t < 1f)
+    {
+        t += Time.deltaTime / tempoRotacao;
+        transform.rotation = Quaternion.Slerp(rotacaoInicial, rotacaoAlvo, t);
+        yield return null;
+    }
+
+    // Move o agente após a rotação
+    transform.position = destino;
             }
         }
     }

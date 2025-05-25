@@ -11,6 +11,8 @@ public class GridGenerator : MonoBehaviour
     public GameObject brisaEffect;
     public GameObject fedorEffect;
 
+    public static Vector2Int posicaoWumpus;
+
     [Header("Configurações")]
     public float tileSize = 1f;
     [Range(0f, 1f)]
@@ -86,6 +88,9 @@ public class GridGenerator : MonoBehaviour
                 Vector3 pos = new Vector3(x * tileSize, 0.5f, y * tileSize);
                 Quaternion rot = Quaternion.Euler(0, 180f, 0);
                 Instantiate(wumpusPrefab, pos, rot, transform);
+
+                posicaoWumpus = new Vector2Int(x, y); // salva a posição lógica do Wumpus
+
                 wumpusColocado = true;
 
                 AdicionarFedor(x + 1, y);
