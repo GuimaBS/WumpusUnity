@@ -8,10 +8,14 @@ public class AgenteReativo : MonoBehaviour
     private TileManager tileManager;
     private float velocidade = 1f;
     private Slider velocidadeSlider;
+    public System.Action onMorte;
+    private bool pegouOuro = false;
+
 
     private void Start()
     {
         tileManager = TileManager.instancia;
+        PontuacaoManager.instancia.AlterarPontuacao(0); // inicia com 0 visível
 
         GameObject sliderObj = GameObject.FindWithTag("VelocidadeSlider");
         if (sliderObj != null)
@@ -24,8 +28,8 @@ public class AgenteReativo : MonoBehaviour
 
     private IEnumerator ComportamentoReativo()
     {
-        // 1. Converter posição do agente para a posição lógica da tile
-        Vector2Int posicaoAgente = new Vector2Int(
+           // 1. Converter posição do agente para a posição lógica da tile
+            Vector2Int posicaoAgente = new Vector2Int(
             Mathf.FloorToInt(transform.position.x / 1.7f),
             Mathf.FloorToInt(transform.position.z / 1.7f)
         );
@@ -34,8 +38,14 @@ public class AgenteReativo : MonoBehaviour
         if (posicaoAgente == GridGenerator.posicaoWumpus)
         {
             Debug.Log("O agente foi morto pelo Wumpus.");
+            onMorte?.Invoke();
             Destroy(gameObject);
+            SistemaDePontuacao.instancia?.AdicionarDerrota();
+            PontuacaoManager.instancia.AlterarPontuacao(-1000);
+
+
             yield break;
+
         }
 
         while (true)
@@ -45,7 +55,7 @@ public class AgenteReativo : MonoBehaviour
 
             yield return new WaitForSeconds(velocidade);
 
-            // Verifica se morreu ao pisar no Wumpus
+            // Verifica se morreu encontrar o Wumpus
             Vector2Int posicaoAtual = new Vector2Int(
                 Mathf.FloorToInt(transform.position.x / 1.7f),
                 Mathf.FloorToInt(transform.position.z / 1.7f)
@@ -54,7 +64,25 @@ public class AgenteReativo : MonoBehaviour
             if (posicaoAtual == GridGenerator.posicaoWumpus)
             {
                 Debug.Log("O agente foi morto pelo Wumpus!");
+                onMorte?.Invoke();
                 Destroy(gameObject);
+                SistemaDePontuacao.instancia?.AdicionarDerrota();
+                LogManager.instancia.AdicionarLog("<color=red> O Agente 1 foi morto pelo Wumpus!</color>");
+                PontuacaoManager.instancia.AlterarPontuacao(-1000);
+
+
+                yield break;
+            }
+
+            // Verifica se o agente voltou para casa com o ouro
+            if (pegouOuro && posicaoAtual == new Vector2Int(0, 0))
+            {
+                Debug.Log("O agente retornou com o ouro! Vitória!");
+                SistemaDePontuacao.instancia?.AdicionarVitoria();
+                onMorte?.Invoke();
+                Destroy(gameObject);
+                PontuacaoManager.instancia.AlterarPontuacao(+2000);
+
                 yield break;
             }
 
@@ -74,7 +102,13 @@ public class AgenteReativo : MonoBehaviour
                 if (col.CompareTag("poco"))
                 {
                     Debug.Log("O agente caiu em um poço e morreu.");
+                    onMorte?.Invoke();
                     Destroy(gameObject);
+                    SistemaDePontuacao.instancia?.AdicionarDerrota();
+                    LogManager.instancia.AdicionarLog("<color=red> O Agente 1 morreu no poço!</color>");
+                    PontuacaoManager.instancia.AlterarPontuacao(-1000);
+
+
                     yield break;
                 }
             }
@@ -91,6 +125,10 @@ public class AgenteReativo : MonoBehaviour
                     {
                         Debug.Log("O agente pegou o ouro!");
                         Destroy(col.gameObject); // Remove o brilho
+                        pegouOuro = true;
+                        LogManager.instancia.AdicionarLog("<color=green>Ouro coletado!</color>");
+                        PontuacaoManager.instancia.AlterarPontuacao(+1000);
+
                     }
                     continue;
                 }
@@ -119,6 +157,9 @@ public class AgenteReativo : MonoBehaviour
                         {
                             Debug.Log("O agente matou o Wumpus com uma flecha!");
                             Destroy(col.gameObject);
+                            LogManager.instancia.AdicionarLog("Agente 1 matou o Wumpus com uma flecha!");
+                            PontuacaoManager.instancia.AlterarPontuacao(+1000);
+
                         }
                         continue;
                     }
@@ -131,7 +172,8 @@ public class AgenteReativo : MonoBehaviour
                 Vector3.back * 1.7f,
                 Vector3.left * 1.7f,
                 Vector3.right * 1.7f
-            };
+        }
+        ;
 
             List<Vector3> direcoesValidas = new List<Vector3>();
             foreach (Vector3 dir in direcoes)
@@ -167,6 +209,7 @@ public class AgenteReativo : MonoBehaviour
 
     // Move o agente após a rotação
     transform.position = destino;
+                PontuacaoManager.instancia.AlterarPontuacao(-1);
             }
         }
     }

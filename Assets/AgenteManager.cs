@@ -1,25 +1,53 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class AgenteManager : MonoBehaviour
 {
-    public GameObject agente1Prefab;
-    public GameObject brilhoAgentePrefab;
+    public GameObject agentePrefab;
+    public Transform agentePai;
 
-    private GameObject agenteInstanciado;
+    private Toggle autoSpawnToggle;
+    private bool autoSpawnAtivo = false;
+    private List<GameObject> agentesVivos = new List<GameObject>();
 
-    public void SpawnAgente1()
+    private void Start()
     {
-        if (agenteInstanciado != null)
+        GameObject toggleObj = GameObject.FindGameObjectWithTag("AutoSpawnToggle");
+        if (toggleObj != null)
         {
-            Destroy(agenteInstanciado);
+            autoSpawnToggle = toggleObj.GetComponent<Toggle>();
+            autoSpawnToggle.onValueChanged.AddListener(delegate { autoSpawnAtivo = autoSpawnToggle.isOn; });
         }
+    }
 
-        Vector3 posicaoInicial = new Vector3(0, 0.5f, 0); // posição inicial
-        agenteInstanciado = Instantiate(agente1Prefab, posicaoInicial, Quaternion.identity);
+    public void CriarAgente1()
+    {
+        GameObject novoAgente = Instantiate(agentePrefab, new Vector3(0, 0.5f, 0), Quaternion.identity, agentePai);
+        agentesVivos.Add(novoAgente);
 
-        // Adiciona o brilho nos pés
-        GameObject brilho = Instantiate(brilhoAgentePrefab, agenteInstanciado.transform);
-        brilho.transform.localPosition = Vector3.zero; // centraliza nos pés
+        AgenteReativo script = novoAgente.GetComponent<AgenteReativo>();
+        if (script != null)
+        {
+            script.onMorte += () =>
+            {
+                agentesVivos.Remove(novoAgente);
+                if (autoSpawnAtivo)
+                {
+                    CriarAgente1(); // Gera outro automaticamente
+                }
+            };
+        }
+        LogManager.instancia.AdicionarLog("Agente 1 criado com sucesso na posição (0,0).");
+    }
+
+    public void RemoverTodosAgentes()
+    {
+        foreach (GameObject agente in agentesVivos)
+        {
+            if (agente != null)
+                Destroy(agente);
+        }
+        agentesVivos.Clear();
     }
 }
-

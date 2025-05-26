@@ -126,6 +126,8 @@ public class GridGenerator : MonoBehaviour
                 ourosColocados++;
             }
         }
+        LogManager.instancia.AdicionarLog($"Bem-vindo ao Labirinto de Wumpus! Mapa gerado: ({xSize},{ySize})");
+
     }
 
     void AdicionarBrisa(int x, int y)
