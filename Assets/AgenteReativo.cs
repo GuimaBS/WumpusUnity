@@ -126,7 +126,7 @@ public class AgenteReativo : MonoBehaviour
                         Debug.Log("O agente pegou o ouro!");
                         Destroy(col.gameObject); // Remove o brilho
                         pegouOuro = true;
-                        LogManager.instancia.AdicionarLog("<color=green>Ouro coletado!</color>");
+                        LogManager.instancia.AdicionarLog("<color=yellow>O Agente1 coletou o ouro!</color>");
                         PontuacaoManager.instancia.AlterarPontuacao(+1000);
 
                     }

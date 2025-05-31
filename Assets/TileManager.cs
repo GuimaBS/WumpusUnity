@@ -5,7 +5,17 @@ public class TileManager : MonoBehaviour
 {
     public static TileManager instancia;
 
-    private Dictionary<Vector2Int, GameObject> tilesValidas = new Dictionary<Vector2Int, GameObject>();
+    // Estrutura para armazenar informações de cada tile
+    public class TileInfo
+    {
+        public GameObject tileObject;
+        public bool temPoco;
+        public bool temBrisa;
+        public bool temFedor;
+        public bool temOuro;
+    }
+
+    private Dictionary<Vector2Int, TileInfo> tilesInfo = new Dictionary<Vector2Int, TileInfo>();
 
     private void Awake()
     {
@@ -19,33 +29,71 @@ public class TileManager : MonoBehaviour
         }
     }
 
-
-    /// Registra a posição de uma tile válida no dicionário.
-   
-    public void RegistrarTile(Vector2Int posicao, GameObject tile)
+    /// <summary>
+    /// Registra uma tile com todas as informações úteis.
+    /// </summary>
+    public void RegistrarTile(Vector2Int posicao, GameObject tileObj, bool temPoco = false, bool temBrisa = false, bool temFedor = false, bool temOuro = false)
     {
-        if (!tilesValidas.ContainsKey(posicao))
+        if (!tilesInfo.ContainsKey(posicao))
         {
-            tilesValidas.Add(posicao, tile);
+            TileInfo novaInfo = new TileInfo
+            {
+                tileObject = tileObj,
+                temPoco = temPoco,
+                temBrisa = temBrisa,
+                temFedor = temFedor,
+                temOuro = temOuro
+            };
+
+            tilesInfo.Add(posicao, novaInfo);
         }
     }
 
-
- 
-    /// Retorna a tile GameObject em determinada posição, se existir.
+    /// <summary>
+    /// Retorna o GameObject da tile em determinada posição, se existir.
+    /// </summary>
     public GameObject ObterTileEm(Vector2Int posicao)
     {
-        if (tilesValidas.ContainsKey(posicao))
+        if (tilesInfo.ContainsKey(posicao))
         {
-            return tilesValidas[posicao];
+            return tilesInfo[posicao].tileObject;
         }
         return null;
     }
 
-
-    /// Retorna todas as posições válidas registradas.
+    /// <summary>
+    /// Retorna todas as posições registradas.
+    /// </summary>
     public List<Vector2Int> ObterTodasAsPosicoes()
     {
-        return new List<Vector2Int>(tilesValidas.Keys);
+        return new List<Vector2Int>(tilesInfo.Keys);
+    }
+
+    /// <summary>
+    /// Retorna todas as informações (TileInfo) de uma posição.
+    /// </summary>
+    public TileInfo ObterInfoDaTile(Vector2Int posicao)
+    {
+        if (tilesInfo.ContainsKey(posicao))
+        {
+            return tilesInfo[posicao];
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Atualiza dinamicamente as propriedades de uma tile (caso algo mude depois).
+    /// </summary>
+    public void AtualizarInfoDaTile(Vector2Int posicao, bool? temPoco = null, bool? temBrisa = null, bool? temFedor = null, bool? temOuro = null)
+    {
+        if (tilesInfo.ContainsKey(posicao))
+        {
+            TileInfo info = tilesInfo[posicao];
+
+            if (temPoco.HasValue) info.temPoco = temPoco.Value;
+            if (temBrisa.HasValue) info.temBrisa = temBrisa.Value;
+            if (temFedor.HasValue) info.temFedor = temFedor.Value;
+            if (temOuro.HasValue) info.temOuro = temOuro.Value;
+        }
     }
 }

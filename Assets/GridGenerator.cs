@@ -20,16 +20,7 @@ public class GridGenerator : MonoBehaviour
 
     private int xSize;
     private int ySize;
-    private TileInfo[,] grid;
-
-    public class TileInfo
-    {
-        public GameObject instancia;
-        public bool temPoco = false;
-        public bool temBrisa = false;
-        public bool temFedor = false;
-        public bool temOuro = false;
-    }
+    private TileManager.TileInfo[,] grid;
 
     void Start()
     {
@@ -38,9 +29,10 @@ public class GridGenerator : MonoBehaviour
         xSize = PlayerPrefs.GetInt("mapX", 5);
         ySize = PlayerPrefs.GetInt("mapY", 5);
 
-        grid = new TileInfo[xSize, ySize];
+        MemoriaVisual.instancia?.InicializarMapa(xSize, ySize);
 
-        // Etapa 1 – Gerar Tiles (algumas com poço)
+        grid = new TileManager.TileInfo[xSize, ySize];
+
         for (int x = 0; x < xSize; x++)
         {
             for (int y = 0; y < ySize; y++)
@@ -50,18 +42,27 @@ public class GridGenerator : MonoBehaviour
 
                 GameObject prefab = isPoco ? tilepPrefab : tilePrefab;
                 GameObject tile = Instantiate(prefab, pos, Quaternion.identity, transform);
-                Vector2Int posicaoTile = new Vector2Int(x, y);
-                TileManager.instancia.RegistrarTile(new Vector2Int(x, y), tile);
 
-                grid[x, y] = new TileInfo
+                TileManager.TileInfo info = new TileManager.TileInfo
                 {
-                    instancia = tile,
-                    temPoco = isPoco
+                    temPoco = isPoco,
+                    temBrisa = false,
+                    temFedor = false,
+                    temOuro = false
                 };
+
+                grid[x, y] = info;
+                TileManager.instancia.RegistrarTile(
+                           new Vector2Int(x, y),
+                           tile,
+                           grid[x, y].temPoco,
+                           grid[x, y].temBrisa,
+                           grid[x, y].temFedor,
+                           grid[x, y].temOuro
+                           );
             }
         }
 
-        // Etapa 2 – Adicionar brisas ao redor dos poços
         for (int x = 0; x < xSize; x++)
         {
             for (int y = 0; y < ySize; y++)
@@ -76,7 +77,6 @@ public class GridGenerator : MonoBehaviour
             }
         }
 
-        // Etapa 3 – Instanciar Wumpus
         bool wumpusColocado = false;
         while (!wumpusColocado)
         {
@@ -89,8 +89,7 @@ public class GridGenerator : MonoBehaviour
                 Quaternion rot = Quaternion.Euler(0, 180f, 0);
                 Instantiate(wumpusPrefab, pos, rot, transform);
 
-                posicaoWumpus = new Vector2Int(x, y); // salva a posição lógica do Wumpus
-
+                posicaoWumpus = new Vector2Int(x, y);
                 wumpusColocado = true;
 
                 AdicionarFedor(x + 1, y);
@@ -100,7 +99,6 @@ public class GridGenerator : MonoBehaviour
             }
         }
 
-        // Etapa 4 – Instanciar ouro(s)
         int ourosParaGerar = (xSize >= 10 && ySize >= 10) ? 2 : 1;
         int ourosColocados = 0;
 
@@ -116,6 +114,7 @@ public class GridGenerator : MonoBehaviour
                 GameObject ouro = Instantiate(ouroPrefab, pos, rot, transform);
 
                 grid[x, y].temOuro = true;
+                TileManager.instancia.ObterInfoDaTile(new Vector2Int(x, y)).temOuro = true;
 
                 if (brilhoOuro != null)
                 {
@@ -126,8 +125,8 @@ public class GridGenerator : MonoBehaviour
                 ourosColocados++;
             }
         }
-        LogManager.instancia.AdicionarLog($"Bem-vindo ao Labirinto de Wumpus! Mapa gerado: ({xSize},{ySize})");
 
+        LogManager.instancia.AdicionarLog($"Bem-vindo ao Labirinto de Wumpus! Mapa gerado: ({xSize},{ySize})");
     }
 
     void AdicionarBrisa(int x, int y)
@@ -136,6 +135,7 @@ public class GridGenerator : MonoBehaviour
         if (grid[x, y].temPoco || grid[x, y].temBrisa) return;
 
         grid[x, y].temBrisa = true;
+        TileManager.instancia.ObterInfoDaTile(new Vector2Int(x, y)).temBrisa = true;
 
         if (brisaEffect != null)
         {
@@ -150,6 +150,7 @@ public class GridGenerator : MonoBehaviour
         if (grid[x, y].temPoco || grid[x, y].temFedor) return;
 
         grid[x, y].temFedor = true;
+        TileManager.instancia.ObterInfoDaTile(new Vector2Int(x, y)).temFedor = true;
 
         if (fedorEffect != null)
         {

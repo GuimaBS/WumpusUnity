@@ -13,6 +13,7 @@ TagManager:
   - brilho
   - VelocidadeSlider
   - AutoSpawnToggle
+  - AgenteInteligente
   layers:
   - Default
   - TransparentFX
