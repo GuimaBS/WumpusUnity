@@ -10,42 +10,46 @@ public class AgenteReativo : MonoBehaviour
     private Slider velocidadeSlider;
     public System.Action onMorte;
     private bool pegouOuro = false;
-
+    public gerarCSV loggerCSV;
 
     private void Start()
     {
         tileManager = TileManager.instancia;
-        PontuacaoManager.instancia.AlterarPontuacao(0); // inicia com 0 visível
+        PontuacaoManager.instancia.AlterarPontuacao(0); // inicia com 0 visivel
 
         GameObject sliderObj = GameObject.FindWithTag("VelocidadeSlider");
         if (sliderObj != null)
         {
             velocidadeSlider = sliderObj.GetComponent<Slider>();
         }
-
+        
+        if (!loggerCSV)
+        {
+            loggerCSV = FindFirstObjectByType<gerarCSV>();
+            if (!loggerCSV) Debug.LogError("NÃ£o encontrou instÃ¢ncia de gerarCSV!");
+        }
         StartCoroutine(ComportamentoReativo());
     }
 
     private IEnumerator ComportamentoReativo()
     {
-           // 1. Converter posição do agente para a posição lógica da tile
-            Vector2Int posicaoAgente = new Vector2Int(
+        // 1. Converter posicao do agente para a posicao logica da tile
+        Vector2Int posicaoAgente = new Vector2Int(
             Mathf.FloorToInt(transform.position.x / 1.7f),
             Mathf.FloorToInt(transform.position.z / 1.7f)
         );
 
-        // 2. Comparar com a posição salva do Wumpus
+        // 2. Comparar com a posicao salva do Wumpus
         if (posicaoAgente == GridGenerator.posicaoWumpus)
         {
             Debug.Log("O agente foi morto pelo Wumpus.");
+            if (loggerCSV) loggerCSV.RegistrarEvento("MorteWumpus", transform.position, "Agente1");
             onMorte?.Invoke();
             Destroy(gameObject);
             SistemaDePontuacao.instancia?.AdicionarDerrota();
             PontuacaoManager.instancia.AlterarPontuacao(-1000);
 
-
             yield break;
-
         }
 
         while (true)
@@ -55,7 +59,7 @@ public class AgenteReativo : MonoBehaviour
 
             yield return new WaitForSeconds(velocidade);
 
-            // Verifica se morreu encontrar o Wumpus
+            // Verifica se morreu encontrando o Wumpus
             Vector2Int posicaoAtual = new Vector2Int(
                 Mathf.FloorToInt(transform.position.x / 1.7f),
                 Mathf.FloorToInt(transform.position.z / 1.7f)
@@ -63,6 +67,7 @@ public class AgenteReativo : MonoBehaviour
 
             if (posicaoAtual == GridGenerator.posicaoWumpus)
             {
+                if (loggerCSV) loggerCSV.RegistrarEvento("MorteWumpus", transform.position, "Agente1");
                 Debug.Log("O agente foi morto pelo Wumpus!");
                 onMorte?.Invoke();
                 Destroy(gameObject);
@@ -70,14 +75,13 @@ public class AgenteReativo : MonoBehaviour
                 LogManager.instancia.AdicionarLog("<color=red> O Agente 1 foi morto pelo Wumpus!</color>");
                 PontuacaoManager.instancia.AlterarPontuacao(-1000);
 
-
                 yield break;
             }
 
             // Verifica se o agente voltou para casa com o ouro
             if (pegouOuro && posicaoAtual == new Vector2Int(0, 0))
             {
-                Debug.Log("O agente retornou com o ouro! Vitória!");
+                Debug.Log("O agente retornou com o ouro! VitÃ³ria!");
                 SistemaDePontuacao.instancia?.AdicionarVitoria();
                 onMorte?.Invoke();
                 Destroy(gameObject);
@@ -95,17 +99,18 @@ public class AgenteReativo : MonoBehaviour
             if (tile == null)
                 yield break;
 
-            // Verifica colisão com poço
+            // Verifica colisÃ£o com poÃ§o
             Collider[] colisores = Physics.OverlapSphere(transform.position + Vector3.up * 0.25f, 0.5f);
             foreach (var col in colisores)
             {
                 if (col.CompareTag("poco"))
                 {
-                    Debug.Log("O agente caiu em um poço e morreu.");
+                    if (loggerCSV) loggerCSV.RegistrarEvento("MortePoco", transform.position, "Agente1");
+                    Debug.Log("O agente caiu em um poÃ§o e morreu.");
                     onMorte?.Invoke();
                     Destroy(gameObject);
                     SistemaDePontuacao.instancia?.AdicionarDerrota();
-                    LogManager.instancia.AdicionarLog("<color=red> O Agente 1 morreu no poço!</color>");
+                    LogManager.instancia.AdicionarLog("<color=red> O Agente 1 morreu no poÃ§o!</color>");
                     PontuacaoManager.instancia.AlterarPontuacao(-1000);
 
 
@@ -134,7 +139,7 @@ public class AgenteReativo : MonoBehaviour
                 }
             }
 
-            // Verifica se Wumpus está nas casas adjacentes
+            // Verifica se Wumpus esta nas casas adjacentes
             Vector3[] direcoesParaAtirar = {
                 Vector3.forward * 1.7f,
                 Vector3.back * 1.7f,
@@ -166,7 +171,7 @@ public class AgenteReativo : MonoBehaviour
                 }
             }
 
-            // Movimento aleatório
+            // Movimento aleatï¿½rio
             Vector3[] direcoes = {
                 Vector3.forward * 1.7f,
                 Vector3.back * 1.7f,
@@ -192,10 +197,10 @@ public class AgenteReativo : MonoBehaviour
                 Vector3 direcaoEscolhida = direcoesValidas[Random.Range(0, direcoesValidas.Count)];
     Vector3 destino = transform.position + direcaoEscolhida;
 
-    // Calcula rotação para a direção do destino
+    // Calcula rotaï¿½ï¿½o para a direï¿½ï¿½o do destino
     Quaternion rotacaoAlvo = Quaternion.LookRotation(direcaoEscolhida, Vector3.up);
 
-    // Suaviza a rotação (ajuste a velocidade conforme desejado)
+    // Suaviza a rotaï¿½ï¿½o (ajuste a velocidade conforme desejado)
     float tempoRotacao = 0.15f;
     float t = 0f;
     Quaternion rotacaoInicial = transform.rotation;
@@ -207,7 +212,7 @@ public class AgenteReativo : MonoBehaviour
         yield return null;
     }
 
-    // Move o agente após a rotação
+    // Move o agente apos a rotaï¿½ï¿½o
     transform.position = destino;
                 PontuacaoManager.instancia.AlterarPontuacao(-1);
             }

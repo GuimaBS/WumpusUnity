@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-public class CSVLogger : MonoBehaviour
+public class gerarCSV : MonoBehaviour
 {
     private List<string> eventos = new List<string>();
 
@@ -31,7 +31,7 @@ public class CSVLogger : MonoBehaviour
             // Cria o arquivo com cabeçalho
             File.WriteAllText(caminhoArquivo, "Evento;Agente;Posição X;Posição Y;Posição Z;Tempo\n");
         }
-
+        
         // Adiciona eventos registrados
         File.AppendAllLines(caminhoArquivo, eventos);
         Debug.Log("Log salvo em: " + caminhoArquivo);
