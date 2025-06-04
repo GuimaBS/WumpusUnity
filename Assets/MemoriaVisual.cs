@@ -9,6 +9,7 @@ public class MemoriaVisual : MonoBehaviour
     public GameObject celulaPrefab;
     public Transform gridContainer;
 
+    private Dictionary<Vector2Int, string> memoria = new Dictionary<Vector2Int, string>();
     private Dictionary<Vector2Int, Image> celulasVisual = new Dictionary<Vector2Int, Image>();
 
     private void Awake()
@@ -66,4 +67,27 @@ public class MemoriaVisual : MonoBehaviour
             }
         }
     }
+
+    public bool TilePareceSegura(Vector2Int posicao)
+    {
+        if (!memoria.ContainsKey(posicao))
+            return true; // ainda não sabe nada sobre a tile
+
+        string tipo = memoria[posicao];
+
+        // Tile conhecida como perigosa
+        if (tipo == "poco" || tipo == "wumpus")
+            return false;
+
+        // Tile com brisa ou fedor é potencialmente perigosa
+        if (tipo == "brisa" || tipo == "fedor")
+            return false;
+
+        return true; // Caso contrário, é segura ou vazia
+    }
+    public bool TemRegistro(Vector2Int posicao)
+    {
+        return memoria.ContainsKey(posicao);
+    }
+
 }

@@ -32,7 +32,11 @@ public class AgenteManager : MonoBehaviour
 
     private void CriarAgente(GameObject prefab, string nomeAgente)
     {
-        GameObject novoAgente = Instantiate(prefab, new Vector3(0, 0.5f, 0), Quaternion.identity, agentePai);
+        Quaternion rotacaoInicial = Quaternion.Euler(0, 0, 0); // Ajuste para a direção correta (ex: para "frente" no mapa)
+        Vector3 posicaoInicial = new Vector3(0, 0, 0); // Y = 0 se o pivot estiver correto no chão
+
+        GameObject novoAgente = Instantiate(prefab, posicaoInicial, rotacaoInicial, agentePai);
+
         agentesVivos.Add(novoAgente);
 
         if (nomeAgente == "Agente1")

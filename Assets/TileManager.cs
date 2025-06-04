@@ -29,9 +29,9 @@ public class TileManager : MonoBehaviour
         }
     }
 
-    /// <summary>
+
     /// Registra uma tile com todas as informações úteis.
-    /// </summary>
+
     public void RegistrarTile(Vector2Int posicao, GameObject tileObj, bool temPoco = false, bool temBrisa = false, bool temFedor = false, bool temOuro = false)
     {
         if (!tilesInfo.ContainsKey(posicao))
@@ -49,9 +49,9 @@ public class TileManager : MonoBehaviour
         }
     }
 
-    /// <summary>
+
     /// Retorna o GameObject da tile em determinada posição, se existir.
-    /// </summary>
+
     public GameObject ObterTileEm(Vector2Int posicao)
     {
         if (tilesInfo.ContainsKey(posicao))
@@ -61,17 +61,17 @@ public class TileManager : MonoBehaviour
         return null;
     }
 
-    /// <summary>
+ 
     /// Retorna todas as posições registradas.
-    /// </summary>
+ 
     public List<Vector2Int> ObterTodasAsPosicoes()
     {
         return new List<Vector2Int>(tilesInfo.Keys);
     }
 
-    /// <summary>
+
     /// Retorna todas as informações (TileInfo) de uma posição.
-    /// </summary>
+
     public TileInfo ObterInfoDaTile(Vector2Int posicao)
     {
         if (tilesInfo.ContainsKey(posicao))
@@ -81,9 +81,9 @@ public class TileManager : MonoBehaviour
         return null;
     }
 
-    /// <summary>
+   
     /// Atualiza dinamicamente as propriedades de uma tile (caso algo mude depois).
-    /// </summary>
+ 
     public void AtualizarInfoDaTile(Vector2Int posicao, bool? temPoco = null, bool? temBrisa = null, bool? temFedor = null, bool? temOuro = null)
     {
         if (tilesInfo.ContainsKey(posicao))
