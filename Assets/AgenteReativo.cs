@@ -6,216 +6,200 @@ using UnityEngine.UI;
 public class AgenteReativo : MonoBehaviour
 {
     private TileManager tileManager;
-    private float velocidade = 1f;
+    private LogManager logManager;
+    private PontuacaoManager pontuacaoManager;
     private Slider velocidadeSlider;
+
     public System.Action onMorte;
-    private bool pegouOuro = false;
-    public gerarCSV loggerCSV;
+
+    private float velocidade = 1f;
+    private Vector2Int posicaoAtual;
 
     private void Start()
     {
         tileManager = TileManager.instancia;
-        PontuacaoManager.instancia.AlterarPontuacao(0); // inicia com 0 visivel
+        logManager = LogManager.instancia;
+        pontuacaoManager = PontuacaoManager.instancia;
+
+        pontuacaoManager.AlterarPontuacao(0);
 
         GameObject sliderObj = GameObject.FindWithTag("VelocidadeSlider");
         if (sliderObj != null)
-        {
             velocidadeSlider = sliderObj.GetComponent<Slider>();
-        }
-        
-        if (!loggerCSV)
-        {
-            loggerCSV = FindFirstObjectByType<gerarCSV>();
-            if (!loggerCSV) Debug.LogError("Não encontrou instância de gerarCSV!");
-        }
-        StartCoroutine(ComportamentoReativo());
+
+        posicaoAtual = new Vector2Int(0, 0);
+        transform.position = new Vector3(posicaoAtual.x * 1.7f, transform.position.y, posicaoAtual.y * 1.7f);
+
+        StartCoroutine(ComportamentoIA());
     }
 
-    private IEnumerator ComportamentoReativo()
+    private IEnumerator ComportamentoIA()
     {
-        // 1. Converter posicao do agente para a posicao logica da tile
-        Vector2Int posicaoAgente = new Vector2Int(
-            Mathf.FloorToInt(transform.position.x / 1.7f),
-            Mathf.FloorToInt(transform.position.z / 1.7f)
-        );
-
-        // 2. Comparar com a posicao salva do Wumpus
-        if (posicaoAgente == GridGenerator.posicaoWumpus)
-        {
-            Debug.Log("O agente foi morto pelo Wumpus.");
-            if (loggerCSV) loggerCSV.RegistrarEvento("MorteWumpus", transform.position, "Agente1");
-            onMorte?.Invoke();
-            Destroy(gameObject);
-            SistemaDePontuacao.instancia?.AdicionarDerrota();
-            PontuacaoManager.instancia.AlterarPontuacao(-1000);
-
-            yield break;
-        }
-
         while (true)
         {
+            Vector2Int proximaTile = EscolherProximaTile();
+
+            yield return StartCoroutine(MoverPara(proximaTile));
+            posicaoAtual = proximaTile;
+
+            pontuacaoManager.AlterarPontuacao(-1);
+
+            var info = tileManager.ObterInfoDaTile(posicaoAtual);
+            if (info != null)
+                ProcessarPercepcao(info);
+
             if (velocidadeSlider != null)
-                velocidade = velocidadeSlider.value;
+                velocidade = Mathf.Lerp(0.1f, 2f, velocidadeSlider.value);
 
             yield return new WaitForSeconds(velocidade);
-
-            // Verifica se morreu encontrando o Wumpus
-            Vector2Int posicaoAtual = new Vector2Int(
-                Mathf.FloorToInt(transform.position.x / 1.7f),
-                Mathf.FloorToInt(transform.position.z / 1.7f)
-            );
-
-            if (posicaoAtual == GridGenerator.posicaoWumpus)
-            {
-                if (loggerCSV) loggerCSV.RegistrarEvento("MorteWumpus", transform.position, "Agente1");
-                Debug.Log("O agente foi morto pelo Wumpus!");
-                onMorte?.Invoke();
-                Destroy(gameObject);
-                SistemaDePontuacao.instancia?.AdicionarDerrota();
-                LogManager.instancia.AdicionarLog("<color=red> O Agente 1 foi morto pelo Wumpus!</color>");
-                PontuacaoManager.instancia.AlterarPontuacao(-1000);
-
-                yield break;
-            }
-
-            // Verifica se o agente voltou para casa com o ouro
-            if (pegouOuro && posicaoAtual == new Vector2Int(0, 0))
-            {
-                Debug.Log("O agente retornou com o ouro! Vitória!");
-                SistemaDePontuacao.instancia?.AdicionarVitoria();
-                onMorte?.Invoke();
-                Destroy(gameObject);
-                PontuacaoManager.instancia.AlterarPontuacao(+2000);
-
-                yield break;
-            }
-
-            Vector3 pos = transform.position;
-            int tileX = Mathf.RoundToInt(pos.x / 1.7f);
-            int tileY = Mathf.RoundToInt(pos.z / 1.7f);
-            Vector2Int posTile = new Vector2Int(tileX, tileY);
-
-            GameObject tile = tileManager.ObterTileEm(posTile);
-            if (tile == null)
-                yield break;
-
-            // Verifica colisão com poço
-            Collider[] colisores = Physics.OverlapSphere(transform.position + Vector3.up * 0.25f, 0.5f);
-            foreach (var col in colisores)
-            {
-                if (col.CompareTag("poco"))
-                {
-                    if (loggerCSV) loggerCSV.RegistrarEvento("MortePoco", transform.position, "Agente1");
-                    Debug.Log("O agente caiu em um poço e morreu.");
-                    onMorte?.Invoke();
-                    Destroy(gameObject);
-                    SistemaDePontuacao.instancia?.AdicionarDerrota();
-                    LogManager.instancia.AdicionarLog("<color=red> O Agente 1 morreu no poço!</color>");
-                    PontuacaoManager.instancia.AlterarPontuacao(-1000);
-
-
-                    yield break;
-                }
-            }
-
-            // Detecta brilho do ouro
-            foreach (var col in colisores)
-            {
-                if (col.CompareTag("brilho"))
-                {
-                    string[] acoes = { "pegar", "mover", "atirar", "voltar" };
-                    string acao = acoes[Random.Range(0, acoes.Length)];
-
-                    if (acao == "pegar")
-                    {
-                        Debug.Log("O agente pegou o ouro!");
-                        Destroy(col.gameObject); // Remove o brilho
-                        pegouOuro = true;
-                        LogManager.instancia.AdicionarLog("<color=yellow>O Agente1 coletou o ouro!</color>");
-                        PontuacaoManager.instancia.AlterarPontuacao(+1000);
-
-                    }
-                    continue;
-                }
-            }
-
-            // Verifica se Wumpus esta nas casas adjacentes
-            Vector3[] direcoesParaAtirar = {
-                Vector3.forward * 1.7f,
-                Vector3.back * 1.7f,
-                Vector3.left * 1.7f,
-                Vector3.right * 1.7f
-            };
-
-            foreach (Vector3 dir in direcoesParaAtirar)
-            {
-                Vector3 alvo = transform.position + dir;
-                Collider[] alvos = Physics.OverlapSphere(alvo, 0.3f);
-                foreach (var col in alvos)
-                {
-                    if (col.CompareTag("wumpus"))
-                    {
-                        string[] acoes = { "mover", "atirar", "voltar" };
-                        string acao = acoes[Random.Range(0, acoes.Length)];
-
-                        if (acao == "atirar")
-                        {
-                            Debug.Log("O agente matou o Wumpus com uma flecha!");
-                            Destroy(col.gameObject);
-                            LogManager.instancia.AdicionarLog("Agente 1 matou o Wumpus com uma flecha!");
-                            PontuacaoManager.instancia.AlterarPontuacao(+1000);
-
-                        }
-                        continue;
-                    }
-                }
-            }
-
-            // Movimento aleat�rio
-            Vector3[] direcoes = {
-                Vector3.forward * 1.7f,
-                Vector3.back * 1.7f,
-                Vector3.left * 1.7f,
-                Vector3.right * 1.7f
         }
-        ;
-
-            List<Vector3> direcoesValidas = new List<Vector3>();
-            foreach (Vector3 dir in direcoes)
-            {
-                Vector3 novaPos = transform.position + dir;
-                int x = Mathf.RoundToInt(novaPos.x / 1.7f);
-                int y = Mathf.RoundToInt(novaPos.z / 1.7f);
-                Vector2Int novaTile = new Vector2Int(x, y);
-
-                if (tileManager.ObterTileEm(novaTile) != null)
-                    direcoesValidas.Add(dir);
-            }
-
-            if (direcoesValidas.Count > 0)
-            {
-                Vector3 direcaoEscolhida = direcoesValidas[Random.Range(0, direcoesValidas.Count)];
-    Vector3 destino = transform.position + direcaoEscolhida;
-
-    // Calcula rota��o para a dire��o do destino
-    Quaternion rotacaoAlvo = Quaternion.LookRotation(direcaoEscolhida, Vector3.up);
-
-    // Suaviza a rota��o (ajuste a velocidade conforme desejado)
-    float tempoRotacao = 0.15f;
-    float t = 0f;
-    Quaternion rotacaoInicial = transform.rotation;
-
-    while (t < 1f)
-    {
-        t += Time.deltaTime / tempoRotacao;
-        transform.rotation = Quaternion.Slerp(rotacaoInicial, rotacaoAlvo, t);
-        yield return null;
     }
 
-    // Move o agente apos a rota��o
-    transform.position = destino;
-                PontuacaoManager.instancia.AlterarPontuacao(-1);
+    private Vector2Int EscolherProximaTile()
+    {
+        List<Vector2Int> direcoes = Direcoes();
+        Vector2Int direcao = direcoes[Random.Range(0, direcoes.Count)];
+        Vector2Int destino = posicaoAtual + direcao;
+
+        if (tileManager.ObterTileEm(destino) != null)
+            return destino;
+
+        return posicaoAtual;
+    }
+
+    private IEnumerator MoverPara(Vector2Int destino)
+    {
+        Vector3 destinoMundo = new Vector3(destino.x * 1.7f, transform.position.y, destino.y * 1.7f);
+
+        Vector3 direcao = destinoMundo - transform.position;
+        if (direcao != Vector3.zero)
+        {
+            Quaternion rotacaoAlvo = Quaternion.LookRotation(direcao.normalized);
+            float tempoRotacao = 0.15f;
+            float t = 0f;
+            Quaternion rotacaoInicial = transform.rotation;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime / tempoRotacao;
+                transform.rotation = Quaternion.Slerp(rotacaoInicial, rotacaoAlvo, t);
+                yield return null;
             }
         }
+
+        transform.position = destinoMundo;
+        yield break;
+    }
+
+    private void ProcessarPercepcao(TileManager.TileInfo info)
+    {
+        if (info.temPoco)
+        {
+            Morrer("<color=red><b>O Agente 1 caiu em um poço!</b></color>");
+            return;
+        }
+
+        if (VerificarContatoDiretoComWumpus() || GridGenerator.posicoesWumpus.Contains(posicaoAtual))
+        {
+            Morrer("<color=red><b>O Agente 1 foi morto pelo Wumpus!</b></color>");
+            return;
+        }
+
+        if (info.temBrisa)
+        {
+            logManager.AdicionarLog("<color=lightblue>O Agente 1 sentiu brisa....</color>");
+        }
+
+        if (info.temFedor)
+        {
+            logManager.AdicionarLog("<color=green>O Agente 1 sentiu um fedor...</color>");
+
+            if (TentarAtirar(posicaoAtual))
+            {
+                logManager.AdicionarLog("<color=orange><b>Wumpus abatido!</b></color>");
+                pontuacaoManager.AlterarPontuacao(+1000);
+                SistemaDePontuacao.instancia?.AdicionarVitoria();
+            }
+            else
+            {
+                logManager.AdicionarLog("<color=orange>O Agente 1 errou o alvo!</color>");
+                pontuacaoManager.AlterarPontuacao(-100);
+            }
+        }
+
+        if (info.temOuro && !GridGenerator.ouroColetado)
+        {
+            logManager.AdicionarLog("<color=yellow>O Agente 1 detectou brilho!</color>");
+            if (PegarOuro(posicaoAtual))
+            {
+                logManager.AdicionarLog("<color=yellow><b>Ouro coletado!</b></color>");
+                pontuacaoManager.AlterarPontuacao(+1000);
+                SistemaDePontuacao.instancia?.AdicionarVitoria();
+            }
+        }
+    }
+
+    private void Morrer(string mensagem)
+    {
+        logManager.AdicionarLog(mensagem);
+        pontuacaoManager.AlterarPontuacao(-1000);
+        SistemaDePontuacao.instancia?.AdicionarDerrota();
+        onMorte?.Invoke();
+        Destroy(gameObject);
+    }
+
+    private bool VerificarContatoDiretoComWumpus()
+    {
+        Collider[] colisores = Physics.OverlapSphere(transform.position, 0.4f);
+        foreach (var col in colisores)
+        {
+            if (col.CompareTag("wumpus"))
+                return true;
+        }
+        return false;
+    }
+
+    private bool TentarAtirar(Vector2Int origem)
+    {
+        Vector3 direcao = transform.forward;
+        Vector3 origemMundo = new Vector3(origem.x * 1.7f, 0.5f, origem.y * 1.7f);
+        Vector3 destino = origemMundo + direcao * 1.7f;
+
+        Vector2Int direcaoLogica = new Vector2Int(Mathf.RoundToInt(direcao.x), Mathf.RoundToInt(direcao.z));
+        Vector2Int posAlvo = origem + direcaoLogica;
+
+        if (GridGenerator.posicoesWumpus.Contains(posAlvo))
+        {
+            GridGenerator.EliminarWumpusNaPosicao(posAlvo);
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool PegarOuro(Vector2Int posicao)
+    {
+        Collider[] objetos = Physics.OverlapSphere(new Vector3(posicao.x * 1.7f, 0.5f, posicao.y * 1.7f), 0.5f);
+        foreach (var obj in objetos)
+        {
+            if (obj.CompareTag("brilho"))
+            {
+                Destroy(obj.gameObject);
+                GridGenerator.ColetarOuroNaPosicao(posicao);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<Vector2Int> Direcoes()
+    {
+        return new List<Vector2Int>
+        {
+            new Vector2Int(0, 1),
+            new Vector2Int(0, -1),
+            new Vector2Int(1, 0),
+            new Vector2Int(-1, 0)
+        };
     }
 }

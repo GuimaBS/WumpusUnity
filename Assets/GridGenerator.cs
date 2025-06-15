@@ -15,13 +15,13 @@ public class GridGenerator : MonoBehaviour
     [Header("Estado Global")]
     public static bool wumpusVivo = true;
     public static bool ouroColetado = false;
-    public static Vector2Int posicaoWumpus;
+    public static List<Vector2Int> posicoesWumpus = new List<Vector2Int>();
+    public static List<GameObject> instanciasWumpus = new List<GameObject>();
+    public static Vector2Int posicaoOuro;
     public static int tamanhoX;
     public static int tamanhoY;
 
-    public static GameObject instanciaWumpus;
     public static GameObject instanciaOuro;
-
     public static Dictionary<Vector2Int, GameObject> efeitosFedor = new Dictionary<Vector2Int, GameObject>();
 
     [Header("Configurações")]
@@ -37,8 +37,8 @@ public class GridGenerator : MonoBehaviour
     {
         wumpusVivo = true;
         ouroColetado = false;
-        instanciaWumpus = null;
-        instanciaOuro = null;
+        posicoesWumpus.Clear();
+        instanciasWumpus.Clear();
         efeitosFedor.Clear();
 
         xSize = PlayerPrefs.GetInt("mapX", 5);
@@ -116,37 +116,46 @@ public class GridGenerator : MonoBehaviour
 
     void ColocarWumpus()
     {
-        bool colocado = false;
+        int quantidadeWumpus = (xSize >= 10 && ySize >= 10) ? 2 : 1;
+        int colocados = 0;
 
-        while (!colocado)
+        while (colocados < quantidadeWumpus)
         {
             int x = Random.Range(0, xSize);
             int y = Random.Range(0, ySize);
 
             bool ehCasaAgente1 = (x == 0 && y == 0);
             bool ehCasaAgente2 = (x == 0 && y == (ySize - 1));
+            Vector2Int pos = new Vector2Int(x, y);
 
-            if (!ehCasaAgente1 && !ehCasaAgente2 && !grid[x, y].temPoco)
+            bool jaPossuiOutroWumpus = posicoesWumpus.Contains(pos);
+
+            if (!ehCasaAgente1 && !ehCasaAgente2 &&
+                !grid[x, y].temPoco && !jaPossuiOutroWumpus)
             {
-                Vector3 pos = new Vector3(x * tileSize, 0.5f, y * tileSize);
-                instanciaWumpus = Instantiate(wumpusPrefab, pos, Quaternion.Euler(0, 180f, 0));
-                posicaoWumpus = new Vector2Int(x, y);
-                colocado = true;
+                Vector3 posMundo = new Vector3(x * tileSize, 0.5f, y * tileSize);
+                GameObject wumpus = Instantiate(wumpusPrefab, posMundo, Quaternion.Euler(0, 180f, 0));
+
+                posicoesWumpus.Add(pos);
+                instanciasWumpus.Add(wumpus);
 
                 AdicionarFedor(x + 1, y);
                 AdicionarFedor(x - 1, y);
                 AdicionarFedor(x, y + 1);
                 AdicionarFedor(x, y - 1);
+
+                colocados++;
             }
         }
+
+        wumpusVivo = true;
     }
 
     void ColocarOuro()
     {
-        int quantidade = (xSize >= 10 && ySize >= 10) ? 2 : 1;
-        int colocados = 0;
+        bool colocado = false;
 
-        while (colocados < quantidade)
+        while (!colocado)
         {
             int x = Random.Range(0, xSize);
             int y = Random.Range(0, ySize);
@@ -160,15 +169,16 @@ public class GridGenerator : MonoBehaviour
                 Vector3 pos = new Vector3(x * tileSize, 0.5f, y * tileSize);
                 instanciaOuro = Instantiate(ouroPrefab, pos, Quaternion.Euler(0, 180f, 0));
 
+                posicaoOuro = new Vector2Int(x, y);
                 grid[x, y].temOuro = true;
-                TileManager.instancia.ObterInfoDaTile(new Vector2Int(x, y)).temOuro = true;
+                TileManager.instancia.ObterInfoDaTile(posicaoOuro).temOuro = true;
 
                 if (brilhoOuro != null)
                 {
                     Instantiate(brilhoOuro, pos + Vector3.up * 0.5f, Quaternion.identity, instanciaOuro.transform);
                 }
 
-                colocados++;
+                colocado = true;
             }
         }
     }
@@ -215,15 +225,14 @@ public class GridGenerator : MonoBehaviour
         }
     }
 
-    // Função para remover o fedor após eliminar o Wumpus
-    public static void RemoverFedor()
+    public static void RemoverFedor(Vector2Int origem)
     {
         Vector2Int[] adjacentes = new Vector2Int[]
         {
-            new Vector2Int(posicaoWumpus.x + 1, posicaoWumpus.y),
-            new Vector2Int(posicaoWumpus.x - 1, posicaoWumpus.y),
-            new Vector2Int(posicaoWumpus.x, posicaoWumpus.y + 1),
-            new Vector2Int(posicaoWumpus.x, posicaoWumpus.y - 1)
+            new Vector2Int(origem.x + 1, origem.y),
+            new Vector2Int(origem.x - 1, origem.y),
+            new Vector2Int(origem.x, origem.y + 1),
+            new Vector2Int(origem.x, origem.y - 1)
         };
 
         foreach (var pos in adjacentes)
@@ -247,28 +256,35 @@ public class GridGenerator : MonoBehaviour
         }
     }
 
-    // Função para eliminar o Wumpus
-    public static void EliminarWumpus()
+    public static void EliminarWumpusNaPosicao(Vector2Int posicao)
     {
-        wumpusVivo = false;
+        int index = posicoesWumpus.IndexOf(posicao);
 
-        if (instanciaWumpus != null)
+        if (index != -1)
         {
-            Destroy(instanciaWumpus);
-            Debug.Log("Wumpus destruído via registro direto.");
+            GameObject wumpus = instanciasWumpus[index];
+
+            if (wumpus != null)
+            {
+                Destroy(wumpus);
+                Debug.Log($"Wumpus na posição {posicao} destruído.");
+            }
+
+            posicoesWumpus.RemoveAt(index);
+            instanciasWumpus.RemoveAt(index);
+
+            RemoverFedor(posicao);
+
+            MemoriaVisual.instancia?.AtualizarTile(posicao, "vazio");
+
+
+            if (posicoesWumpus.Count == 0)
+            {
+                wumpusVivo = false;
+            }
         }
-        else
-        {
-            Debug.LogWarning("Tentou eliminar Wumpus, mas não havia Wumpus na cena.");
-        }
-
-        RemoverFedor();
-
-        MemoriaVisual.instancia?.AtualizarTile(posicaoWumpus, "vazio");
-
     }
 
-    // Função para coletar o ouro
     public static void ColetarOuroNaPosicao(Vector2Int posicao)
     {
         ouroColetado = true;

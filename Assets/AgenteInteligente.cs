@@ -31,7 +31,10 @@ public class AgenteInteligente : MonoBehaviour
         if (sliderObj != null)
             velocidadeSlider = sliderObj.GetComponent<Slider>();
 
-        posicaoAtual = PegarPosicaoAtual();
+        int yMax = GridGenerator.tamanhoY - 1;
+        posicaoAtual = new Vector2Int(0, yMax);
+        transform.position = new Vector3(posicaoAtual.x * 1.7f, transform.position.y, posicaoAtual.y * 1.7f);
+
         visitadas.Add(posicaoAtual);
         memoriaVisual.AtualizarTile(posicaoAtual, "vazio");
 
@@ -127,8 +130,7 @@ public class AgenteInteligente : MonoBehaviour
             return;
         }
 
-        if (GridGenerator.wumpusVivo &&
-            (VerificarContatoDiretoComWumpus() || posicaoAtual == GridGenerator.posicaoWumpus))
+        if (VerificarContatoDiretoComWumpus() || GridGenerator.posicoesWumpus.Contains(posicaoAtual))
         {
             memoriaVisual.AtualizarTile(posicaoAtual, "wumpus");
             Morrer("<color=red><b>O Agente 2 foi morto pelo Wumpus!</b></color>");
@@ -145,15 +147,16 @@ public class AgenteInteligente : MonoBehaviour
         {
             memoriaVisual.AtualizarTile(posicaoAtual, "fedor");
             logManager.AdicionarLog("<color=green>O Agente 2 sentiu um fedor...</color>");
+
             if (TentarAtirar(posicaoAtual))
             {
-                logManager.AdicionarLog("<color=purple><b>O Agente 2 atirou uma flecha e matou o Wumpus!</b></color>");
+                logManager.AdicionarLog("<color=purple><b>O Agente 2 atirou a flecha e matou o Wumpus!</b></color>");
                 pontuacaoManager.AlterarPontuacao(+1000);
                 SistemaDePontuacao.instancia?.AdicionarVitoria();
             }
             else
             {
-                logManager.AdicionarLog("<color=purple>O Agente 2 errou o alvo!</color>");
+                logManager.AdicionarLog("<color=purple>O Agente 2 errou a flecha!</color>");
                 pontuacaoManager.AlterarPontuacao(-100);
                 direcoesComFalha.Add(posicaoAtual);
             }
@@ -183,9 +186,7 @@ public class AgenteInteligente : MonoBehaviour
 
     private bool VerificarContatoDiretoComWumpus()
     {
-        if (!GridGenerator.wumpusVivo) return false;
-
-        Collider[] colisores = Physics.OverlapSphere(transform.position, 0.6f);
+        Collider[] colisores = Physics.OverlapSphere(transform.position, 0.4f);
         foreach (var col in colisores)
         {
             if (col.CompareTag("wumpus"))
@@ -203,9 +204,9 @@ public class AgenteInteligente : MonoBehaviour
         Vector2Int direcaoLogica = new Vector2Int(Mathf.RoundToInt(direcao.x), Mathf.RoundToInt(direcao.z));
         Vector2Int posAlvo = origem + direcaoLogica;
 
-        if (posAlvo == GridGenerator.posicaoWumpus)
+        if (GridGenerator.posicoesWumpus.Contains(posAlvo))
         {
-            GridGenerator.EliminarWumpus();
+            GridGenerator.EliminarWumpusNaPosicao(posAlvo);
             return true;
         }
 
@@ -214,20 +215,28 @@ public class AgenteInteligente : MonoBehaviour
 
     private bool PegarOuro(Vector2Int posicao)
     {
-        if (!GridGenerator.ouroColetado)
+        var info = TileManager.instancia.ObterInfoDaTile(posicao);
+
+        if (info != null && info.temOuro)
         {
+            info.temOuro = false;
             GridGenerator.ColetarOuroNaPosicao(posicao);
+
+            GameObject[] brilhos = GameObject.FindGameObjectsWithTag("brilho");
+            foreach (GameObject brilho in brilhos)
+            {
+                Vector3 brilhoPos = new Vector3(posicao.x * 1.7f, 0.5f, posicao.y * 1.7f);
+                if (Vector3.Distance(brilho.transform.position, brilhoPos) < 0.8f)
+                {
+                    Destroy(brilho);
+                    break;
+                }
+            }
+
             return true;
         }
-        return false;
-    }
 
-    private Vector2Int PegarPosicaoAtual()
-    {
-        return new Vector2Int(
-            Mathf.RoundToInt(transform.position.x / 1.7f),
-            Mathf.RoundToInt(transform.position.z / 1.7f)
-        );
+        return false;
     }
 
     private List<Vector2Int> Direcoes()
