@@ -64,10 +64,43 @@ PrefabInstance:
       propertyPath: m_Name
       value: wumpus
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: def263ddd78550c4889f083a5042ec4b, type: 3}
+      propertyPath: m_TagString
+      value: wumpus
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 65702495048144492, guid: def263ddd78550c4889f083a5042ec4b, type: 3}
     - {fileID: -8700617353114198275, guid: def263ddd78550c4889f083a5042ec4b, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: def263ddd78550c4889f083a5042ec4b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -2107112873572297955}
   m_SourcePrefab: {fileID: 100100000, guid: def263ddd78550c4889f083a5042ec4b, type: 3}
+--- !u!1 &7138091720025068149 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: def263ddd78550c4889f083a5042ec4b, type: 3}
+  m_PrefabInstance: {fileID: 8056642076131815204}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &-2107112873572297955
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7138091720025068149}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}

@@ -27,7 +27,7 @@ ModelImporter:
     animationDoRetargetingWarnings: 0
     importAnimatedCustomProperties: 0
     importConstraints: 0
-    animationCompression: 1
+    animationCompression: 3
     animationRotationError: 0.5
     animationPositionError: 0.5
     animationScaleError: 0.5
@@ -85,7 +85,287 @@ ModelImporter:
   humanDescription:
     serializedVersion: 3
     human: []
-    skeleton: []
+    skeleton:
+    - name: wumpus(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Armature
+      parentName: wumpus(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: base
+      parentName: Armature
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "p\xE9_IK.L"
+      parentName: base
+      position: {x: -0.36217618, y: 0.07738495, z: -0.084588006}
+      rotation: {x: -0.2626073, y: -0.6386297, z: 0.6487709, w: 0.31982157}
+      scale: {x: 0.9999999, y: 0.9999998, z: 0.99999994}
+    - name: "p\xE9_IK.L_end"
+      parentName: "p\xE9_IK.L"
+      position: {x: -0, y: 0.21718486, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: perna_target.L
+      parentName: base
+      position: {x: -0.26520285, y: 0.37254244, z: 0.41581225}
+      rotation: {x: -0.00000009415697, y: 0.7071068, z: 0.7071067, w: -0.00000009415696}
+      scale: {x: 1, y: 1, z: 1}
+    - name: perna_target.L_end
+      parentName: perna_target.L
+      position: {x: -0, y: 0.28237283, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "p\xE9_IK.R"
+      parentName: base
+      position: {x: 0.36217618, y: 0.07738495, z: -0.084588006}
+      rotation: {x: 0.2626073, y: -0.6386297, z: 0.6487709, w: -0.31982157}
+      scale: {x: 0.9999999, y: 0.9999998, z: 0.99999994}
+    - name: "p\xE9_IK.R_end"
+      parentName: "p\xE9_IK.R"
+      position: {x: -0, y: 0.21718486, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: perna_target.R
+      parentName: base
+      position: {x: 0.26520285, y: 0.37254244, z: 0.41581225}
+      rotation: {x: -0.00000009415697, y: 0.7071068, z: 0.7071067, w: -0.00000009415696}
+      scale: {x: 1, y: 1, z: 1}
+    - name: perna_target.R_end
+      parentName: perna_target.R
+      position: {x: -0, y: 0.28237283, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: quadril
+      parentName: Armature
+      position: {x: 0.0091670845, y: 0.0044360757, z: 0.9072932}
+      rotation: {x: -0.5429168, y: -0.023163319, z: 0.032520127, w: 0.83883685}
+      scale: {x: 1, y: 0.99999994, z: 0.9999999}
+    - name: coluna
+      parentName: quadril
+      position: {x: -0.0000000035506673, y: -0.00000007735798, z: -0.000000023457687}
+      rotation: {x: 0.95324665, y: -0.0029117218, z: -0.039820075, w: 0.29954413}
+      scale: {x: 0.99999994, y: 0.99999994, z: 0.99999994}
+    - name: peito
+      parentName: coluna
+      position: {x: 3.4210323e-10, y: 0.20691505, z: 0.0000000033577976}
+      rotation: {x: -0.012563631, y: -0.00055864465, z: -0.011583333, w: 0.99985385}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "pesco\xE7o"
+      parentName: peito
+      position: {x: 0.0000000038417056, y: 0.3436397, z: -0.0000000035252015}
+      rotation: {x: 0.33296776, y: -0.004899043, z: 0.007561175, w: 0.94289523}
+      scale: {x: 1, y: 0.99999994, z: 0.99999994}
+    - name: "cabe\xE7a"
+      parentName: "pesco\xE7o"
+      position: {x: 4.656613e-10, y: 0.24684426, z: 0.00000003509922}
+      rotation: {x: 0.17932445, y: -0.022052176, z: 0.019249665, w: 0.9833544}
+      scale: {x: 0.9999999, y: 1, z: 1}
+    - name: chifre.L
+      parentName: "cabe\xE7a"
+      position: {x: -0.000000007916242, y: -0.0000000058789738, z: -0.00000009912765}
+      rotation: {x: -0.33772612, y: 0.14005052, z: 0.510674, w: 0.7781639}
+      scale: {x: 1, y: 1.0000001, z: 1}
+    - name: "pesco\xE7o.002"
+      parentName: chifre.L
+      position: {x: -0.00000012665987, y: 0.2094, z: 0}
+      rotation: {x: -0.024688587, y: -0.0137053, z: 0.18779688, w: 0.9818019}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "pesco\xE7o.002_end"
+      parentName: "pesco\xE7o.002"
+      position: {x: -0, y: 0.1596762, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "pesco\xE7o.003"
+      parentName: chifre.L
+      position: {x: -0.058774076, y: 0.3576187, z: -0.008562803}
+      rotation: {x: -0.4470439, y: -0.12868345, z: -0.18837953, w: 0.8649309}
+      scale: {x: 0.99999994, y: 1, z: 0.99999994}
+    - name: "pesco\xE7o.003_end"
+      parentName: "pesco\xE7o.003"
+      position: {x: -0, y: 0.12001567, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "pesco\xE7o.001"
+      parentName: "pesco\xE7o"
+      position: {x: 4.656613e-10, y: 0.24684426, z: 0.00000003509922}
+      rotation: {x: -0.29283956, y: -0.07801389, z: -0.5138546, w: 0.80256605}
+      scale: {x: 0.99999994, y: 0.99999994, z: 0.9999999}
+    - name: "pesco\xE7o.001_end"
+      parentName: "pesco\xE7o.001"
+      position: {x: -0, y: 0.19815098, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "pesco\xE7o.004"
+      parentName: "pesco\xE7o"
+      position: {x: 0.17248955, y: 0.30636823, z: -0.07725326}
+      rotation: {x: -0.17294839, y: 0.0717651, z: -0.66068244, w: 0.726937}
+      scale: {x: 0.9999999, y: 0.99999994, z: 0.99999994}
+    - name: "pesco\xE7o.004_end"
+      parentName: "pesco\xE7o.004"
+      position: {x: -0, y: 0.15586516, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "pesco\xE7o.005"
+      parentName: "pesco\xE7o"
+      position: {x: 0.31833658, y: 0.31683847, z: -0.1312251}
+      rotation: {x: -0.30151924, y: 0.745242, z: -0.4511792, w: 0.38747638}
+      scale: {x: 0.9999999, y: 1, z: 1}
+    - name: "pesco\xE7o.005_end"
+      parentName: "pesco\xE7o.005"
+      position: {x: -0, y: 0.12196604, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "bra\xE7o_sup.L"
+      parentName: peito
+      position: {x: -0.22959179, y: 0.25431332, z: -0.022953238}
+      rotation: {x: 0.6411586, y: -0.5944977, z: -0.35400257, w: -0.33191928}
+      scale: {x: 1, y: 1.0000005, z: 1.0000002}
+    - name: "bra\xE7o_inf.L"
+      parentName: "bra\xE7o_sup.L"
+      position: {x: -0, y: 0.49442717, z: 0.00000016391277}
+      rotation: {x: -0.009832725, y: 0.008530438, z: 0.013983548, w: 0.9998175}
+      scale: {x: 0.9999998, y: 0.99999994, z: 0.9999996}
+    - name: "bra\xE7o_inf.L_end"
+      parentName: "bra\xE7o_inf.L"
+      position: {x: -0, y: 0.3588372, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "bra\xE7o_IK.L"
+      parentName: peito
+      position: {x: -0.7115967, y: -0.41452986, z: 0.015532061}
+      rotation: {x: -0.23371162, y: 0.38926122, z: 0.49367937, w: 0.7417111}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "m\xE3o.L"
+      parentName: "bra\xE7o_IK.L"
+      position: {x: -0.000000007450581, y: 0.000000030966476, z: -0.000000063329935}
+      rotation: {x: 0.80276614, y: -0.35869882, z: -0.050807435, w: -0.4736246}
+      scale: {x: 0.99999994, y: 1, z: 1}
+    - name: "m\xE3o.L_end"
+      parentName: "m\xE3o.L"
+      position: {x: -0, y: 0.16747165, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "bra\xE7o_sup.R"
+      parentName: peito
+      position: {x: 0.19919224, y: 0.26425406, z: -0.023307752}
+      rotation: {x: 0.6274998, y: 0.60892385, z: 0.34568426, w: -0.34052634}
+      scale: {x: 1.0000017, y: 1.0000007, z: 0.9999999}
+    - name: "bra\xE7o_inf.R"
+      parentName: "bra\xE7o_sup.R"
+      position: {x: -0.000000059604645, y: 0.49442706, z: 0.00000010058284}
+      rotation: {x: -0.009832889, y: -0.008530423, z: -0.013983518, w: 0.9998175}
+      scale: {x: 1, y: 1.0000001, z: 1}
+    - name: "bra\xE7o_inf.R_end"
+      parentName: "bra\xE7o_inf.R"
+      position: {x: -0, y: 0.3588372, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: "bra\xE7o_IK.R"
+      parentName: peito
+      position: {x: 0.71173793, y: -0.38153195, z: 0.014355331}
+      rotation: {x: -0.2250347, y: -0.39396027, z: -0.4761625, w: 0.7532755}
+      scale: {x: 0.99999994, y: 1, z: 1}
+    - name: "m\xE3o.R"
+      parentName: "bra\xE7o_IK.R"
+      position: {x: 0.0000000037252903, y: 0.000000058906153, z: -0.00000006519258}
+      rotation: {x: 0.7966065, y: 0.3881703, z: 0.07973452, w: -0.45649135}
+      scale: {x: 0.9999999, y: 0.99999976, z: 0.9999999}
+    - name: "m\xE3o.R_end"
+      parentName: "m\xE3o.R"
+      position: {x: -0, y: 0.17063244, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: perna_sup1.L
+      parentName: quadril
+      position: {x: -0.15724503, y: 0.19426543, z: -0.055806108}
+      rotation: {x: -0.10227691, y: 0.9219769, z: -0.36970103, w: -0.053094912}
+      scale: {x: 0.9999998, y: 1.0000002, z: 1}
+    - name: perna_sup2.L
+      parentName: perna_sup1.L
+      position: {x: 0.000000023283064, y: 0.34279045, z: -0.000000013038516}
+      rotation: {x: -0.707719, y: 0.007929416, z: -0.1330018, w: 0.6938166}
+      scale: {x: 1.0000004, y: 0.99999976, z: 0.9999995}
+    - name: perna_inf.L
+      parentName: perna_sup2.L
+      position: {x: -0.00000007869676, y: 0.15815458, z: -0.000000027939677}
+      rotation: {x: 0.528043, y: 0.11401323, z: 0.26465175, w: 0.798831}
+      scale: {x: 0.9999999, y: 1, z: 1}
+    - name: "p\xE9.L"
+      parentName: perna_inf.L
+      position: {x: -0.000000040978193, y: 0.27062023, z: -0.000000011175871}
+      rotation: {x: 0.4738907, y: 0.12598637, z: 0.1383981, w: 0.86046565}
+      scale: {x: 1, y: 1, z: 1.0000001}
+    - name: dedo.L
+      parentName: "p\xE9.L"
+      position: {x: -0.00000000721775, y: 0.12806876, z: -0.0000000013969839}
+      rotation: {x: 0.09571356, y: 0.04000322, z: 0.18687244, w: 0.9768917}
+      scale: {x: 0.99999994, y: 0.99999994, z: 0.99999994}
+    - name: dedo.L_end
+      parentName: dedo.L
+      position: {x: -0, y: 0.063945964, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: perna_sup1.R
+      parentName: quadril
+      position: {x: 0.14010407, y: 0.18549347, z: -0.07793163}
+      rotation: {x: 0.10164161, y: 0.9199681, z: -0.37766972, w: -0.026330817}
+      scale: {x: 0.9999998, y: 1.000001, z: 1}
+    - name: perna_sup2.R
+      parentName: perna_sup1.R
+      position: {x: -0.000000012456439, y: 0.34279048, z: 0.000000011175871}
+      rotation: {x: -0.7077197, y: -0.007929436, z: 0.13300183, w: 0.69381595}
+      scale: {x: 1.0000004, y: 1.0000002, z: 1.0000001}
+    - name: perna_inf.R
+      parentName: perna_sup2.R
+      position: {x: -0.000000023748726, y: 0.15815455, z: -0.000000039115548}
+      rotation: {x: 0.5280431, y: -0.114013046, z: -0.26465186, w: 0.798831}
+      scale: {x: 1.0000002, y: 1.0000001, z: 1.0000002}
+    - name: "p\xE9.R"
+      parentName: perna_inf.R
+      position: {x: 0.000000059604645, y: 0.2706201, z: -0.0000000037252903}
+      rotation: {x: 0.4738909, y: -0.12598635, z: -0.13839816, w: 0.86046547}
+      scale: {x: 0.99999994, y: 0.9999999, z: 0.9999999}
+    - name: dedo.R
+      parentName: "p\xE9.R"
+      position: {x: 0.000000004656613, y: 0.12806873, z: 0.0000000013969839}
+      rotation: {x: 0.095713615, y: -0.040003225, z: -0.18687248, w: 0.9768917}
+      scale: {x: 1, y: 0.99999994, z: 1}
+    - name: dedo.R_end
+      parentName: dedo.R
+      position: {x: -0, y: 0.063945964, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: rabo
+      parentName: quadril
+      position: {x: -0.0000000035506673, y: -0.00000007735798, z: -0.000000023457687}
+      rotation: {x: 0.2691879, y: 0.054211266, z: -0.008558815, w: 0.96152264}
+      scale: {x: 1, y: 1.0000001, z: 1}
+    - name: rabo_end
+      parentName: rabo
+      position: {x: -0, y: 0.45851853, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Camera
+      parentName: wumpus(Clone)
+      position: {x: -7.3588915, y: 4.958309, z: 6.925791}
+      rotation: {x: 0.09062851, y: 0.89379627, z: -0.20997299, w: 0.3857799}
+      scale: {x: 0.99999994, y: 1, z: 1}
+    - name: Light
+      parentName: wumpus(Clone)
+      position: {x: -4.0762453, y: 5.903862, z: -1.005454}
+      rotation: {x: 0.52327543, y: -0.34203398, z: 0.72694236, w: 0.2841663}
+      scale: {x: 1, y: 0.99999994, z: 1}
+    - name: model
+      parentName: wumpus(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.00000003774895, y: 0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
     armTwist: 0.5
     foreArmTwist: 0.5
     upperLegTwist: 0.5
@@ -96,13 +376,13 @@ ModelImporter:
     globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
-    hasExtraRoot: 0
+    hasExtraRoot: 1
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
-  avatarSetup: 0
+  avatarSetup: 1
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1
   importBlendShapeDeformPercent: 1
   remapMaterialsIfMaterialImportModeIsNone: 0
