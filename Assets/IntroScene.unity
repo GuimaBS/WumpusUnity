@@ -1017,13 +1017,17 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: -5.20343
       objectReference: {fileID: 0}
+    - target: {fileID: 548437763252507595, guid: 81265d8cc48d9c444a11fed7551b4ca6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -3.5043793
+      objectReference: {fileID: 0}
     - target: {fileID: 4623371909641782924, guid: 81265d8cc48d9c444a11fed7551b4ca6, type: 3}
       propertyPath: m_Name
       value: LevelLoaderF
       objectReference: {fileID: 0}
     - target: {fileID: 4623371909641782924, guid: 81265d8cc48d9c444a11fed7551b4ca6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5449295792449851440, guid: 81265d8cc48d9c444a11fed7551b4ca6, type: 3}
       propertyPath: m_LocalPosition.x
