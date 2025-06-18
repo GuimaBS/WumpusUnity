@@ -10,6 +10,7 @@ public class AgenteInteligente : MonoBehaviour
     private LogManager logManager;
     private PontuacaoManager pontuacaoManager;
     private Slider velocidadeSlider;
+    public GameObject hitEffectPrefab;
 
     public System.Action onMorte;
 
@@ -50,6 +51,10 @@ public class AgenteInteligente : MonoBehaviour
             yield return StartCoroutine(MoverPara(proximaTile));
             posicaoAtual = proximaTile;
 
+            // Verifica se caiu em poço (com emissão de fantasma)
+            if (VerificarSeCaiuEmPoco())
+                yield break;
+
             if (!visitadas.Contains(posicaoAtual))
             {
                 visitadas.Add(posicaoAtual);
@@ -62,10 +67,30 @@ public class AgenteInteligente : MonoBehaviour
                 ProcessarPercepcao(info);
 
             if (velocidadeSlider != null)
-                velocidade = Mathf.Lerp(0.1f, 2f, velocidadeSlider.value);
+                velocidade = Mathf.Max(0.1f, velocidadeSlider.value);
+            else
+                velocidade = 1f;
 
             yield return new WaitForSeconds(velocidade);
         }
+    }
+
+    private bool VerificarSeCaiuEmPoco()
+    {
+        if (tileManager.PocoNaPosicao(posicaoAtual))
+        {
+            TileP tileP = tileManager.ObterTilePNaPosicao(posicaoAtual);
+            if (tileP != null)
+                tileP.AtivarFantasma();
+
+            logManager.AdicionarLog("<color=red><b>O Agente 2 caiu em um poço e morreu!</b></color>");
+            pontuacaoManager.AlterarPontuacao(-1000);
+            SistemaDePontuacao.instancia?.AdicionarDerrota();
+            onMorte?.Invoke();
+            Destroy(gameObject);
+            return true;
+        }
+        return false;
     }
 
     private Vector2Int EscolherProximaTile()
@@ -123,13 +148,6 @@ public class AgenteInteligente : MonoBehaviour
 
     private void ProcessarPercepcao(TileManager.TileInfo info)
     {
-        if (info.temPoco)
-        {
-            memoriaVisual.AtualizarTile(posicaoAtual, "poco");
-            Morrer("<color=red><b>O Agente 2 caiu em um poço!</b></color>");
-            return;
-        }
-
         if (VerificarContatoDiretoComWumpus() || GridGenerator.posicoesWumpus.Contains(posicaoAtual))
         {
             memoriaVisual.AtualizarTile(posicaoAtual, "wumpus");
@@ -140,7 +158,7 @@ public class AgenteInteligente : MonoBehaviour
         if (info.temBrisa)
         {
             memoriaVisual.AtualizarTile(posicaoAtual, "brisa");
-            logManager.AdicionarLog("<color=lightblue>O Agente 2 sentiu brisa....</color>");
+            logManager.AdicionarLog("<color=lightblue>O Agente 2 sentiu brisa...</color>");
         }
 
         if (info.temFedor)
@@ -206,9 +224,14 @@ public class AgenteInteligente : MonoBehaviour
 
         if (GridGenerator.posicoesWumpus.Contains(posAlvo))
         {
+            // Instancia efeito de hit antes de eliminar
+            Vector3 posicaoMundo = new Vector3(posAlvo.x * 1.7f, 0.5f, posAlvo.y * 1.7f);
+            Instantiate(hitEffectPrefab, posicaoMundo + Vector3.up * 1f, Quaternion.identity);
+
             GridGenerator.EliminarWumpusNaPosicao(posAlvo);
             return true;
         }
+
 
         return false;
     }

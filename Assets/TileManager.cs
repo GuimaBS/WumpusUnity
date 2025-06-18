@@ -29,9 +29,7 @@ public class TileManager : MonoBehaviour
         }
     }
 
-
-    /// Registra uma tile com todas as informações úteis.
-
+    // Registrar uma tile
     public void RegistrarTile(Vector2Int posicao, GameObject tileObj, bool temPoco = false, bool temBrisa = false, bool temFedor = false, bool temOuro = false)
     {
         if (!tilesInfo.ContainsKey(posicao))
@@ -49,9 +47,7 @@ public class TileManager : MonoBehaviour
         }
     }
 
-
-    /// Retorna o GameObject da tile em determinada posição, se existir.
-
+    // Obter GameObject da tile
     public GameObject ObterTileEm(Vector2Int posicao)
     {
         if (tilesInfo.ContainsKey(posicao))
@@ -61,17 +57,13 @@ public class TileManager : MonoBehaviour
         return null;
     }
 
- 
-    /// Retorna todas as posições registradas.
- 
+    // Obter todas as posições
     public List<Vector2Int> ObterTodasAsPosicoes()
     {
         return new List<Vector2Int>(tilesInfo.Keys);
     }
 
-
-    /// Retorna todas as informações (TileInfo) de uma posição.
-
+    // Obter informações completas da tile
     public TileInfo ObterInfoDaTile(Vector2Int posicao)
     {
         if (tilesInfo.ContainsKey(posicao))
@@ -81,9 +73,7 @@ public class TileManager : MonoBehaviour
         return null;
     }
 
-   
-    /// Atualiza dinamicamente as propriedades de uma tile (caso algo mude depois).
- 
+    // Atualizar dinamicamente informações de uma tile
     public void AtualizarInfoDaTile(Vector2Int posicao, bool? temPoco = null, bool? temBrisa = null, bool? temFedor = null, bool? temOuro = null)
     {
         if (tilesInfo.ContainsKey(posicao))
@@ -95,5 +85,26 @@ public class TileManager : MonoBehaviour
             if (temFedor.HasValue) info.temFedor = temFedor.Value;
             if (temOuro.HasValue) info.temOuro = temOuro.Value;
         }
+    }
+
+    // Verificar se há poço na posição
+    public bool PocoNaPosicao(Vector2Int posicao)
+    {
+        return tilesInfo.ContainsKey(posicao) && tilesInfo[posicao].temPoco;
+    }
+
+    // Obter TileP na posição (tile de poço)
+    public TileP ObterTilePNaPosicao(Vector2Int posicao)
+    {
+        if (tilesInfo.ContainsKey(posicao))
+        {
+            var info = tilesInfo[posicao];
+
+            if (info.temPoco && info.tileObject != null)
+            {
+                return info.tileObject.GetComponent<TileP>();
+            }
+        }
+        return null;
     }
 }

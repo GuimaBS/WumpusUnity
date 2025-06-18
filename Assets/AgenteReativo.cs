@@ -17,12 +17,18 @@ public class AgenteReativo : MonoBehaviour
         tileManager = TileManager.instancia;
         PontuacaoManager.instancia.AlterarPontuacao(0); // Inicia com 0 visível
 
+        // Localiza o slider pela Tag
         GameObject sliderObj = GameObject.FindWithTag("VelocidadeSlider");
         if (sliderObj != null)
         {
             velocidadeSlider = sliderObj.GetComponent<Slider>();
         }
+        else
+        {
+            Debug.LogWarning("VelocidadeSlider não encontrado na cena!");
+        }
 
+        // Localiza o logger CSV
         if (!loggerCSV)
         {
             loggerCSV = FindFirstObjectByType<gerarCSV>();
@@ -36,11 +42,15 @@ public class AgenteReativo : MonoBehaviour
     {
         while (true)
         {
+            // Controle dinâmico da velocidade
             if (velocidadeSlider != null)
-                velocidade = Mathf.Max(0.1f, velocidadeSlider.value); // Garante que nunca será zero
+                velocidade = Mathf.Max(0.1f, velocidadeSlider.value); // Nunca menor que 0.1
+            else
+                velocidade = 1f;
 
             yield return new WaitForSeconds(velocidade);
 
+            // Pega posição atual do agente no grid
             Vector3 pos = transform.position;
             Vector2Int posicaoAtual = new Vector2Int(
                 Mathf.RoundToInt(pos.x / 1.7f),
@@ -51,23 +61,23 @@ public class AgenteReativo : MonoBehaviour
             if (tile == null)
                 yield break;
 
-            // Verificar morte por poço
-            Collider[] colisores = Physics.OverlapSphere(transform.position + Vector3.up * 0.25f, 0.5f);
-            foreach (var col in colisores)
+            //  Verifica morte por poço com emissão de fantasma
+            if (tileManager.PocoNaPosicao(posicaoAtual))
             {
-                if (col.CompareTag("poco"))
-                {
-                    if (loggerCSV) loggerCSV.RegistrarEvento("MortePoco", transform.position, "Agente1");
-                    LogManager.instancia.AdicionarLog("<color=red> O Agente caiu em um poço e morreu.</color>");
-                    onMorte?.Invoke();
-                    Destroy(gameObject);
-                    SistemaDePontuacao.instancia?.AdicionarDerrota();
-                    PontuacaoManager.instancia.AlterarPontuacao(-1000);
-                    yield break;
-                }
+                TileP tileP = tileManager.ObterTilePNaPosicao(posicaoAtual);
+                if (tileP != null)
+                    tileP.AtivarFantasma();
+
+                if (loggerCSV) loggerCSV.RegistrarEvento("MortePoco", transform.position, "Agente1");
+                LogManager.instancia.AdicionarLog("<color=red> O Agente caiu em um poço e morreu.</color>");
+                onMorte?.Invoke();
+                Destroy(gameObject);
+                SistemaDePontuacao.instancia?.AdicionarDerrota();
+                PontuacaoManager.instancia.AlterarPontuacao(-1000);
+                yield break;
             }
 
-            // Verificar morte por Wumpus
+            //  Verifica morte por Wumpus
             if (GridGenerator.posicoesWumpus.Contains(posicaoAtual))
             {
                 if (loggerCSV) loggerCSV.RegistrarEvento("MorteWumpus", transform.position, "Agente1");
@@ -79,7 +89,8 @@ public class AgenteReativo : MonoBehaviour
                 yield break;
             }
 
-            // Detecta ouro
+            //  Detectar ouro (tentativa aleatória de pegar)
+            Collider[] colisores = Physics.OverlapSphere(transform.position + Vector3.up * 0.25f, 0.5f);
             foreach (var col in colisores)
             {
                 if (col.CompareTag("brilho"))
@@ -98,19 +109,31 @@ public class AgenteReativo : MonoBehaviour
                 }
             }
 
-            // Detectar percepções (logs)
+            //  Verifica se voltou para a base com o ouro
+            if (pegouOuro && posicaoAtual == new Vector2Int(0, 0))
+            {
+                LogManager.instancia.AdicionarLog("<color=yellow><b>O Agente voltou para a base com o ouro! Vitória!</b></color>");
+                if (loggerCSV) loggerCSV.RegistrarEvento("VitoriaComOuro", transform.position, "Agente1");
+                SistemaDePontuacao.instancia?.AdicionarVitoria();
+                PontuacaoManager.instancia.AlterarPontuacao(+2000);
+                onMorte?.Invoke();
+                Destroy(gameObject);
+                yield break;
+            }
+
+            //  Detectar percepções (somente logs)
             var info = tileManager.ObterInfoDaTile(posicaoAtual);
             if (info != null)
             {
                 if (info.temBrisa)
-                    LogManager.instancia.AdicionarLog("<color=lightblue>O Agente sentiu brisa...</color>");
+                    LogManager.instancia.AdicionarLog("<color=lightblue>O Agente 1 sentiu brisa...</color>");
                 if (info.temFedor)
-                    LogManager.instancia.AdicionarLog("<color=green>O Agente sentiu um fedor...</color>");
+                    LogManager.instancia.AdicionarLog("<color=green>O Agente 1 sentiu um fedor...</color>");
                 if (info.temOuro)
-                    LogManager.instancia.AdicionarLog("<color=yellow>O Agente percebeu brilho...</color>");
+                    LogManager.instancia.AdicionarLog("<color=yellow>O Agente 1 percebeu o brilho...</color>");
             }
 
-            // Verifica Wumpus nas casas adjacentes e tenta atirar (de forma aleatória, sem inferência)
+            //  Tentativa aleatória de atirar (não inteligente)
             Vector3[] direcoesParaAtirar = {
                 Vector3.forward * 1.7f,
                 Vector3.back * 1.7f,
@@ -122,6 +145,7 @@ public class AgenteReativo : MonoBehaviour
             {
                 Vector3 alvo = transform.position + dir;
                 Collider[] alvos = Physics.OverlapSphere(alvo, 0.3f);
+
                 foreach (var col in alvos)
                 {
                     if (col.CompareTag("wumpus"))
@@ -148,7 +172,7 @@ public class AgenteReativo : MonoBehaviour
                 }
             }
 
-            // Movimento aleatório
+            // 🧭 Movimento aleatório
             Vector3[] direcoes = {
                 Vector3.forward * 1.7f,
                 Vector3.back * 1.7f,
@@ -174,7 +198,7 @@ public class AgenteReativo : MonoBehaviour
                 Vector3 direcaoEscolhida = direcoesValidas[Random.Range(0, direcoesValidas.Count)];
                 Vector3 destino = transform.position + direcaoEscolhida;
 
-                // Rotaciona antes de se mover
+                // Rotação suave antes de mover
                 Quaternion rotacaoAlvo = Quaternion.LookRotation(direcaoEscolhida, Vector3.up);
                 Quaternion rotacaoInicial = transform.rotation;
 
