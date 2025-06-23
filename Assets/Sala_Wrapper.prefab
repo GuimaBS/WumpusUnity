@@ -101,9 +101,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1493110654570894240, guid: 809fd9e55e7a1034297527a6f5807532, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9063188992605705282}
-    - targetCorrespondingSourceObject: {fileID: 5860473659446257670, guid: 809fd9e55e7a1034297527a6f5807532, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8869952734110025265}
   m_SourcePrefab: {fileID: 100100000, guid: 809fd9e55e7a1034297527a6f5807532, type: 3}
 --- !u!1 &1526857547718087071 stripped
 GameObject:
@@ -155,24 +152,3 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3742966945822066061, guid: 809fd9e55e7a1034297527a6f5807532, type: 3}
   m_PrefabInstance: {fileID: 110589855994528319}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &5826656663842794041 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5860473659446257670, guid: 809fd9e55e7a1034297527a6f5807532, type: 3}
-  m_PrefabInstance: {fileID: 110589855994528319}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &8869952734110025265
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5826656663842794041}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b1ad54e3653fb75428f2c6356f07ec91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  efeitoColetarOuro: {fileID: 2078536211965194912, guid: 9249d9e3bac7ac74eb27a2f88c452e6f, type: 3}
-  efeitoFlechaDisparada: {fileID: 449390529828578114, guid: ac1f9cc18eecef3459e5537c3564bd5a, type: 3}
-  efeitoImpacto: {fileID: 7728772344407986051, guid: 071140c5c6878bc4b92f53478df7c13b, type: 3}
-  efeitoMorte: {fileID: 470466588776947047, guid: c280183a029104443a62d8ddbe52769d, type: 3}

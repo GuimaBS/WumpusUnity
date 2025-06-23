@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4513958622511440096
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5170639183648092180}
+  m_Layer: 0
+  m_Name: pontoDeDisparo
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5170639183648092180
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4513958622511440096}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.047999993, y: 1.363, z: 0.5970001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2617442072629839002}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7768985651386433940
 GameObject:
   m_ObjectHideFlags: 0
@@ -32,6 +63,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6133619631803590035}
+  - {fileID: 5170639183648092180}
   - {fileID: 768330994626817377}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -48,16 +80,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveDistance: 10
-  moveSpeed: 5
-  rotationSpeed: 300
+  moveSpeed: 20
+  rotationSpeed: 400
   flechas: 3
   ouro: 0
-  flechasText: {fileID: 0}
-  ouroText: {fileID: 0}
   obstaculosLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   boxSize: {x: 1, y: 2, z: 1}
+  prefabFlecha: {fileID: 1164557728362429617, guid: 5d3b0b4fa8cca564387c877581ea3fe1, type: 3}
+  pontoDeDisparo: {fileID: 5170639183648092180}
 --- !u!65 &459113335104385235
 BoxCollider:
   m_ObjectHideFlags: 0

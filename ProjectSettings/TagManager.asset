@@ -22,6 +22,7 @@ TagManager:
   - FxTemporaire
   - SalaP
   - salap
+  - flecha
   layers:
   - Default
   - TransparentFX

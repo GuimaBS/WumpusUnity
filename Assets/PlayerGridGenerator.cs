@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class PlayerGridGenerator : MonoBehaviour
 {
+    public static PlayerGridGenerator instancia;
+    public static System.Action OnMapaGerado;
+
     [Header("Prefabs das Salas")]
     public GameObject salaPrefab;
     public GameObject salaComPocoPrefab;
@@ -10,6 +13,19 @@ public class PlayerGridGenerator : MonoBehaviour
     [Header("Prefabs dos Personagens")]
     public GameObject prefabArqueiro;
     public GameObject prefabAmazona;
+
+    [Header("Offset Específico por Personagem")]
+    public Vector3 offsetArqueiro = Vector3.zero;
+    public Vector3 offsetAmazona = Vector3.zero;
+
+    [Header("Prefabs de Sensações")]
+    public GameObject prefabBrisa;
+    public GameObject prefabFedor;
+    public GameObject prefabBrilho;
+
+    [Header("Prefab do Wumpus e do Ouro")]
+    public GameObject prefabWumpus;
+    public GameObject prefabOuro;
 
     [Header("Configuração do Mapa")]
     public float espacoEntreSalas = 10f;
@@ -22,21 +38,53 @@ public class PlayerGridGenerator : MonoBehaviour
     [Header("Mapa Gerado")]
     public Dictionary<Vector2Int, GameObject> mapaGerado = new Dictionary<Vector2Int, GameObject>();
 
+    [Header("Mapa Lógico")]
+    public Dictionary<Vector2Int, TileInfo> gridInfo = new Dictionary<Vector2Int, TileInfo>();
+
     private int tamanhoX;
     private int tamanhoY;
 
     private GameObject playerInstanciado;
+    private GameObject wumpusInstanciado;
+    private GameObject ouroInstanciado;
+    public Vector2Int posicaoWumpus;
+    public Vector2Int posicaoOuro;
+
+    [System.Serializable]
+    public class TileInfo
+    {
+        public bool temPoco = false;
+        public bool temBrisa = false;
+        public bool temFedor = false;
+        public bool temOuro = false;
+        public bool foiVisitada = false;
+    }
 
     private void Awake()
     {
+        if (instancia == null)
+        {
+            instancia = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         tamanhoX = PlayerPrefs.GetInt("mapX");
         tamanhoY = PlayerPrefs.GetInt("mapY");
 
-        Debug.Log($"Gerando mapa de tamanho {tamanhoX}x{tamanhoY} na ClassicScene");
+        Debug.Log($"Gerando mapa de tamanho {tamanhoX}x{tamanhoY}");
 
         GerarMapa();
         GarantirSalaSeguraEm00();
+        AplicarBrisaNosPocos();
+        InstanciarWumpus();
+        InstanciarOuro();
         SpawnarPlayer();
+
+        OnMapaGerado?.Invoke();
     }
 
     public void GerarMapa()
@@ -51,12 +99,12 @@ public class PlayerGridGenerator : MonoBehaviour
                 Vector2Int posicaoGrid = new Vector2Int(x, y);
 
                 GameObject salaInstanciada;
-
                 bool temPoco = Random.value < 0.2f;
 
                 if (temPoco)
                 {
                     salaInstanciada = Instantiate(salaComPocoPrefab, posicao, Quaternion.identity, paiDasSalas);
+                    salaInstanciada.tag = "SalaP";
                 }
                 else
                 {
@@ -65,6 +113,9 @@ public class PlayerGridGenerator : MonoBehaviour
 
                 salaInstanciada.name = $"Sala ({x},{y})";
                 mapaGerado.Add(posicaoGrid, salaInstanciada);
+
+                TileInfo info = new TileInfo { temPoco = temPoco };
+                gridInfo.Add(posicaoGrid, info);
             }
         }
     }
@@ -72,137 +123,125 @@ public class PlayerGridGenerator : MonoBehaviour
     private void GarantirSalaSeguraEm00()
     {
         Vector2Int posicaoInicial = new Vector2Int(0, 0);
-
-        if (mapaGerado.ContainsKey(posicaoInicial))
+        if (gridInfo[posicaoInicial].temPoco)
         {
-            GameObject salaNaPosicao = mapaGerado[posicaoInicial];
+            GameObject salaAntiga = mapaGerado[posicaoInicial];
+            Destroy(salaAntiga);
+            mapaGerado.Remove(posicaoInicial);
+            gridInfo[posicaoInicial].temPoco = false;
 
-            if (salaNaPosicao.CompareTag("SalaP") || salaNaPosicao.name.Contains("SalaP"))
+            GameObject novaSala = Instantiate(salaPrefab, Vector3.zero, Quaternion.identity, paiDasSalas);
+            novaSala.name = "Sala (0,0)";
+            mapaGerado.Add(posicaoInicial, novaSala);
+        }
+    }
+
+    private void AplicarBrisaNosPocos()
+    {
+        foreach (var kvp in gridInfo)
+        {
+            Vector2Int pos = kvp.Key;
+            if (kvp.Value.temPoco)
             {
-                Debug.LogWarning("Sala (0,0) tinha poço! Substituindo por sala comum.");
+                Vector2Int[] direcoes = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
-                Destroy(salaNaPosicao);
-                mapaGerado.Remove(posicaoInicial);
+                foreach (Vector2Int dir in direcoes)
+                {
+                    Vector2Int adj = pos + dir;
+                    if (gridInfo.ContainsKey(adj) && !gridInfo[adj].temPoco)
+                    {
+                        gridInfo[adj].temBrisa = true;
 
-                Vector3 posicao = new Vector3(0, 0, 0);
-                GameObject novaSala = Instantiate(salaPrefab, posicao, Quaternion.identity, paiDasSalas);
-                novaSala.name = "Sala (0,0)";
-
-                mapaGerado.Add(posicaoInicial, novaSala);
+                        GameObject salaAdj = mapaGerado[adj];
+                        if (salaAdj.transform.Find("Brisa") == null)
+                        {
+                            Vector3 posBrisa = salaAdj.transform.position + new Vector3(0, 1.5f, 0);
+                            Instantiate(prefabBrisa, posBrisa, Quaternion.identity, salaAdj.transform).name = "Brisa";
+                        }
+                    }
+                }
             }
         }
     }
 
+    private void InstanciarWumpus()
+    {
+        do
+        {
+            posicaoWumpus = new Vector2Int(Random.Range(0, tamanhoX), Random.Range(0, tamanhoY));
+        } while (posicaoWumpus == Vector2Int.zero || gridInfo[posicaoWumpus].temPoco);
+
+        Vector3 posMundo = mapaGerado[posicaoWumpus].transform.position + new Vector3(0, 0.5f, 0);
+        Instantiate(prefabWumpus, posMundo, Quaternion.identity, mapaGerado[posicaoWumpus].transform).tag = "wumpus";
+
+        AplicarFedorNoWumpus(posicaoWumpus);
+    }
+
+    private void AplicarFedorNoWumpus(Vector2Int origem)
+    {
+        Vector2Int[] direcoes = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        foreach (Vector2Int dir in direcoes)
+        {
+            Vector2Int adj = origem + dir;
+            if (gridInfo.ContainsKey(adj))
+            {
+                gridInfo[adj].temFedor = true;
+
+                GameObject salaAdj = mapaGerado[adj];
+                if (salaAdj.transform.Find("Fedor") == null)
+                {
+                    Vector3 posFedor = salaAdj.transform.position + new Vector3(0, 1.5f, 0);
+                    Instantiate(prefabFedor, posFedor, Quaternion.identity, salaAdj.transform).name = "Fedor";
+                }
+            }
+        }
+    }
+
+    private void InstanciarOuro()
+    {
+        do
+        {
+            posicaoOuro = new Vector2Int(Random.Range(0, tamanhoX), Random.Range(0, tamanhoY));
+        } while (posicaoOuro == Vector2Int.zero || gridInfo[posicaoOuro].temPoco || posicaoOuro == posicaoWumpus);
+
+        Vector3 posMundo = mapaGerado[posicaoOuro].transform.position + new Vector3(0, 0.5f, 0);
+        Instantiate(prefabOuro, posMundo, Quaternion.identity, mapaGerado[posicaoOuro].transform).tag = "ouro";
+
+        Vector3 posBrilho = posMundo + new Vector3(0, 0.5f, 0);
+        Instantiate(prefabBrilho, posBrilho, Quaternion.identity, mapaGerado[posicaoOuro].transform).name = "Brilho";
+    }
+
     private void SpawnarPlayer()
     {
-        Vector3 posicaoSala = new Vector3(0, 0, 0);
-
         string personagem = GameSessionManager.instancia.personagemEscolhido;
-        Debug.Log("Personagem selecionado para spawn: " + personagem);
+        GameObject prefab = personagem == "arqueiro" ? prefabArqueiro : prefabAmazona;
+        Vector3 offset = personagem == "arqueiro" ? offsetArqueiro : offsetAmazona;
 
-        GameObject prefabSelecionado = null;
+        Vector3 pos = Vector3.zero + offsetCentroSala + CalcularOffsetDoPlayer(prefab) + offset;
+        GameObject player = Instantiate(prefab, pos, Quaternion.identity, paiDoPlayer);
 
-        switch (personagem)
-        {
-            case "arqueiro":
-                prefabSelecionado = prefabArqueiro;
-                break;
+        CameraFollow cam = FindFirstObjectByType<CameraFollow>();
+        if (cam) cam.DefinirAlvo(player.transform.Find("CameraTarget") ?? player.transform);
 
-            case "amazona":
-                prefabSelecionado = prefabAmazona;
-                break;
-
-            default:
-                Debug.LogError("Personagem não reconhecido. Verifique a string.");
-                return;
-        }
-
-        Vector3 offsetDoPlayer = CalcularOffsetDoPlayer(prefabSelecionado);
-        Vector3 posicaoFinal = posicaoSala + offsetCentroSala + offsetDoPlayer;
-
-        playerInstanciado = Instantiate(prefabSelecionado, posicaoFinal, Quaternion.identity, paiDoPlayer);
-
-        Debug.Log($"{personagem} spawnado na sala (0,0) na posição {posicaoFinal}");
-
-        // Configurar a câmera para seguir o CameraTarget dentro do prefab
-        CameraFollow cameraFollow = FindFirstObjectByType<CameraFollow>();
-        if (cameraFollow != null)
-        {
-            Transform cameraTarget = playerInstanciado.transform.Find("CameraTarget");
-
-            if (cameraTarget != null)
-            {
-                cameraFollow.DefinirAlvo(cameraTarget);
-                Debug.Log("CameraFollow configurado com CameraTarget.");
-            }
-            else
-            {
-                Debug.LogWarning("CameraTarget não encontrado dentro do prefab do player.");
-                cameraFollow.DefinirAlvo(playerInstanciado.transform);
-            }
-        }
-        else
-        {
-            Debug.LogWarning("CameraFollow não encontrado na cena!");
-        }
-
-        // Configura o LightManager
-        if (LightManager.instancia != null)
-        {
-            LightManager.instancia.DefinirPlayer(playerInstanciado.transform);
-        }
-        else
-        {
-            Debug.LogWarning("LightManager não encontrado na cena!");
-        }
-
-        // Configura o ParticleManager
-        if (ParticleManager.instancia != null)
-        {
-            ParticleManager.instancia.DefinirPlayer(playerInstanciado.transform);
-        }
-        else
-        {
-            Debug.LogWarning("ParticleManager não encontrado na cena!");
-        }
-
-        // Registra o player no GameManager
-        if (GameManager.instancia != null)
-        {
-            GameManager.instancia.DefinirPlayer(playerInstanciado);
-        }
+        if (GameManager.instancia != null) GameManager.instancia.DefinirPlayer(player);
     }
 
     private Vector3 CalcularOffsetDoPlayer(GameObject prefab)
     {
         Collider col = prefab.GetComponentInChildren<Collider>();
-
         if (col != null)
         {
-            Bounds bounds = col.bounds;
-
-            Vector3 centroXZ = new Vector3(bounds.center.x, 0, bounds.center.z);
-            float altura = bounds.extents.y;
-
-            Vector3 offset = -centroXZ - new Vector3(0, altura, 0);
-
-            Debug.Log($"Offset calculado para player: {offset}");
-
-            return offset;
+            Bounds b = col.bounds;
+            return -new Vector3(b.center.x, b.extents.y, b.center.z);
         }
-        else
-        {
-            Debug.LogWarning("O prefab do player não tem Collider. Usando offset padrão.");
-            return Vector3.zero;
-        }
+        return Vector3.zero;
     }
 
     public void LimparMapa()
     {
-        foreach (Transform filho in paiDasSalas)
-        {
-            Destroy(filho.gameObject);
-        }
+        foreach (Transform t in paiDasSalas) Destroy(t.gameObject);
         mapaGerado.Clear();
+        gridInfo.Clear();
     }
 }
