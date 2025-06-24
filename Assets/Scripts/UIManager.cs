@@ -5,49 +5,31 @@ public class UIManager : MonoBehaviour
 {
     public static UIManager instancia;
 
-    [Header("Referências de UI")]
-    public TMP_Text flechasText;
-    public TMP_Text ouroText;
+    [Header("Textos UI")]
+    public TMP_Text textoFlechas;
+    public TMP_Text textoOuro;
+    public TMP_Text textoMortes;
 
     private void Awake()
     {
         if (instancia == null)
-        {
             instancia = this;
-        }
         else
-        {
             Destroy(gameObject);
-        }
     }
 
-
-    // Atualiza a quantidade de flechas na UI.
-
-    public void AtualizarFlechas(int quantidade)
+    public void AtualizarFlechas(int qtd)
     {
-        if (flechasText != null)
-        {
-            flechasText.text = quantidade.ToString();
-        }
-        else
-        {
-            Debug.LogWarning("UIManager: flechasText não atribuído no inspector.");
-        }
+        textoFlechas.text = qtd.ToString();
     }
 
-
-    //Atualiza a quantidade de ouro na UI.
-
-    public void AtualizarOuro(int quantidade)
+    public void AtualizarOuro(int qtd)
     {
-        if (ouroText != null)
-        {
-            ouroText.text = quantidade.ToString();
-        }
-        else
-        {
-            Debug.LogWarning("UIManager: ouroText não atribuído no inspector.");
-        }
+        textoOuro.text = qtd.ToString();
+    }
+
+    public void AtualizarMortes(int qtd)
+    {
+        textoMortes.text = qtd.ToString();
     }
 }

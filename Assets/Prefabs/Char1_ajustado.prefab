@@ -84,6 +84,7 @@ MonoBehaviour:
   rotationSpeed: 400
   flechas: 3
   ouro: 0
+  mortes: 0
   obstaculosLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -91,6 +92,12 @@ MonoBehaviour:
   prefabFlecha: {fileID: 1164557728362429617, guid: 5d3b0b4fa8cca564387c877581ea3fe1, type: 3}
   pontoDeDisparo: {fileID: 7143391003913650618}
   delayDisparo: 2.1
+  prefabParticulaColetar: {fileID: 2078536211965194912, guid: 9249d9e3bac7ac74eb27a2f88c452e6f, type: 3}
+  prefabParticulaMorte: {fileID: 470466588776947047, guid: c280183a029104443a62d8ddbe52769d, type: 3}
+  prefabParticulaMorteWumpus: {fileID: 7728772344407986051, guid: 071140c5c6878bc4b92f53478df7c13b, type: 3}
+  prefabParticulaRespawn: {fileID: 6672371794521518739, guid: b69636e36d8166e4b8082d81d374910c, type: 3}
+  pontoDeSpawn: {fileID: 0}
+  alturaYCorreta: 0
 --- !u!65 &6837695753426038035
 BoxCollider:
   m_ObjectHideFlags: 0

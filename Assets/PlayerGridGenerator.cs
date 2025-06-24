@@ -18,7 +18,7 @@ public class PlayerGridGenerator : MonoBehaviour
     public Vector3 offsetArqueiro = Vector3.zero;
     public Vector3 offsetAmazona = Vector3.zero;
 
-    [Header("Prefabs de Sensações")]
+    [Header("Prefab de Sensações")]
     public GameObject prefabBrisa;
     public GameObject prefabFedor;
     public GameObject prefabBrilho;
@@ -26,6 +26,10 @@ public class PlayerGridGenerator : MonoBehaviour
     [Header("Prefab do Wumpus e do Ouro")]
     public GameObject prefabWumpus;
     public GameObject prefabOuro;
+
+    [Header("Prefab de Bloqueio")]
+    public GameObject prefabBloqueio;
+    public Vector3 offsetBloqueio = Vector3.zero;
 
     [Header("Configuração do Mapa")]
     public float espacoEntreSalas = 10f;
@@ -41,12 +45,6 @@ public class PlayerGridGenerator : MonoBehaviour
     [Header("Mapa Lógico")]
     public Dictionary<Vector2Int, TileInfo> gridInfo = new Dictionary<Vector2Int, TileInfo>();
 
-    private int tamanhoX;
-    private int tamanhoY;
-
-    private GameObject playerInstanciado;
-    private GameObject wumpusInstanciado;
-    private GameObject ouroInstanciado;
     public Vector2Int posicaoWumpus;
     public Vector2Int posicaoOuro;
 
@@ -62,20 +60,13 @@ public class PlayerGridGenerator : MonoBehaviour
 
     private void Awake()
     {
-        if (instancia == null)
-        {
-            instancia = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (instancia == null) instancia = this;
+        else { Destroy(gameObject); return; }
 
         tamanhoX = PlayerPrefs.GetInt("mapX");
         tamanhoY = PlayerPrefs.GetInt("mapY");
 
-        Debug.Log($"Gerando mapa de tamanho {tamanhoX}x{tamanhoY}");
+        Debug.Log($"Gerando mapa {tamanhoX}x{tamanhoY}");
 
         GerarMapa();
         GarantirSalaSeguraEm00();
@@ -87,6 +78,9 @@ public class PlayerGridGenerator : MonoBehaviour
         OnMapaGerado?.Invoke();
     }
 
+    private int tamanhoX;
+    private int tamanhoY;
+
     public void GerarMapa()
     {
         LimparMapa();
@@ -95,44 +89,87 @@ public class PlayerGridGenerator : MonoBehaviour
         {
             for (int y = 0; y < tamanhoY; y++)
             {
-                Vector3 posicao = new Vector3(x * espacoEntreSalas, 0, y * espacoEntreSalas);
-                Vector2Int posicaoGrid = new Vector2Int(x, y);
+                Vector3 pos = new Vector3(x * espacoEntreSalas, 0, y * espacoEntreSalas);
+                Vector2Int gridPos = new Vector2Int(x, y);
 
-                GameObject salaInstanciada;
+                GameObject sala;
                 bool temPoco = Random.value < 0.2f;
 
                 if (temPoco)
                 {
-                    salaInstanciada = Instantiate(salaComPocoPrefab, posicao, Quaternion.identity, paiDasSalas);
-                    salaInstanciada.tag = "SalaP";
+                    sala = Instantiate(salaComPocoPrefab, pos, Quaternion.identity, paiDasSalas);
+                    sala.tag = "SalaP";
                 }
                 else
                 {
-                    salaInstanciada = Instantiate(salaPrefab, posicao, Quaternion.identity, paiDasSalas);
+                    sala = Instantiate(salaPrefab, pos, Quaternion.identity, paiDasSalas);
                 }
 
-                salaInstanciada.name = $"Sala ({x},{y})";
-                mapaGerado.Add(posicaoGrid, salaInstanciada);
+                sala.name = $"Sala ({x},{y})";
+                mapaGerado.Add(gridPos, sala);
 
                 TileInfo info = new TileInfo { temPoco = temPoco };
-                gridInfo.Add(posicaoGrid, info);
+                gridInfo.Add(gridPos, info);
+            }
+        }
+
+        GerarBloqueiosDeBorda();
+    }
+
+    private void GerarBloqueiosDeBorda()
+    {
+        foreach (var kvp in mapaGerado)
+        {
+            Vector2Int pos = kvp.Key;
+            GameObject sala = kvp.Value;
+
+            Vector3 salaPos = sala.transform.position;
+
+            Vector2Int[] direcoes = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+            Vector3[] posicoesPortas = {
+                salaPos + new Vector3(0, 0, espacoEntreSalas / 2),
+                salaPos + new Vector3(0, 0, -espacoEntreSalas / 2),
+                salaPos + new Vector3(-espacoEntreSalas / 2, 0, 0),
+                salaPos + new Vector3(espacoEntreSalas / 2, 0, 0)
+            };
+            Vector3[] rotacoes = {
+                new Vector3(0, 0, 0),
+                new Vector3(0, 180, 0),
+                new Vector3(0, -90, 0),
+                new Vector3(0, 90, 0)
+            };
+
+            for (int i = 0; i < direcoes.Length; i++)
+            {
+                Vector2Int direcao = direcoes[i];
+                Vector2Int destino = pos + direcao;
+
+                if (!gridInfo.ContainsKey(destino))
+                {
+                    GameObject bloqueio = Instantiate(
+                        prefabBloqueio,
+                        posicoesPortas[i] + offsetBloqueio,
+                        Quaternion.Euler(rotacoes[i]),
+                        sala.transform
+                    );
+                    bloqueio.name = $"Bloqueio_{pos}_{direcao}";
+                }
             }
         }
     }
 
     private void GarantirSalaSeguraEm00()
     {
-        Vector2Int posicaoInicial = new Vector2Int(0, 0);
-        if (gridInfo[posicaoInicial].temPoco)
+        Vector2Int posInicial = new Vector2Int(0, 0);
+        if (gridInfo[posInicial].temPoco)
         {
-            GameObject salaAntiga = mapaGerado[posicaoInicial];
-            Destroy(salaAntiga);
-            mapaGerado.Remove(posicaoInicial);
-            gridInfo[posicaoInicial].temPoco = false;
+            Destroy(mapaGerado[posInicial]);
+            mapaGerado.Remove(posInicial);
+            gridInfo[posInicial].temPoco = false;
 
             GameObject novaSala = Instantiate(salaPrefab, Vector3.zero, Quaternion.identity, paiDasSalas);
             novaSala.name = "Sala (0,0)";
-            mapaGerado.Add(posicaoInicial, novaSala);
+            mapaGerado.Add(posInicial, novaSala);
         }
     }
 
@@ -143,9 +180,9 @@ public class PlayerGridGenerator : MonoBehaviour
             Vector2Int pos = kvp.Key;
             if (kvp.Value.temPoco)
             {
-                Vector2Int[] direcoes = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+                Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
-                foreach (Vector2Int dir in direcoes)
+                foreach (Vector2Int dir in dirs)
                 {
                     Vector2Int adj = pos + dir;
                     if (gridInfo.ContainsKey(adj) && !gridInfo[adj].temPoco)
@@ -171,17 +208,17 @@ public class PlayerGridGenerator : MonoBehaviour
             posicaoWumpus = new Vector2Int(Random.Range(0, tamanhoX), Random.Range(0, tamanhoY));
         } while (posicaoWumpus == Vector2Int.zero || gridInfo[posicaoWumpus].temPoco);
 
-        Vector3 posMundo = mapaGerado[posicaoWumpus].transform.position + new Vector3(0, 0.5f, 0);
-        Instantiate(prefabWumpus, posMundo, Quaternion.identity, mapaGerado[posicaoWumpus].transform).tag = "wumpus";
+        Vector3 pos = mapaGerado[posicaoWumpus].transform.position + new Vector3(0, 0.5f, 0);
+        Instantiate(prefabWumpus, pos, Quaternion.identity, mapaGerado[posicaoWumpus].transform).tag = "wumpus";
 
         AplicarFedorNoWumpus(posicaoWumpus);
     }
 
     private void AplicarFedorNoWumpus(Vector2Int origem)
     {
-        Vector2Int[] direcoes = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
-        foreach (Vector2Int dir in direcoes)
+        foreach (Vector2Int dir in dirs)
         {
             Vector2Int adj = origem + dir;
             if (gridInfo.ContainsKey(adj))
@@ -203,14 +240,23 @@ public class PlayerGridGenerator : MonoBehaviour
         do
         {
             posicaoOuro = new Vector2Int(Random.Range(0, tamanhoX), Random.Range(0, tamanhoY));
-        } while (posicaoOuro == Vector2Int.zero || gridInfo[posicaoOuro].temPoco || posicaoOuro == posicaoWumpus);
+        }
+        while (posicaoOuro == Vector2Int.zero ||
+               gridInfo[posicaoOuro].temPoco ||
+               posicaoOuro == posicaoWumpus);
 
-        Vector3 posMundo = mapaGerado[posicaoOuro].transform.position + new Vector3(0, 0.5f, 0);
-        Instantiate(prefabOuro, posMundo, Quaternion.identity, mapaGerado[posicaoOuro].transform).tag = "ouro";
+        Vector3 pos = mapaGerado[posicaoOuro].transform.position + new Vector3(0, 0.5f, 0);
 
-        Vector3 posBrilho = posMundo + new Vector3(0, 0.5f, 0);
+        GameObject ouroObj = Instantiate(prefabOuro, pos, Quaternion.identity, mapaGerado[posicaoOuro].transform);
+        ouroObj.name = "ouro";
+        ouroObj.tag = "ouro";
+
+        Vector3 posBrilho = pos + new Vector3(0, 0.5f, 0);
         Instantiate(prefabBrilho, posBrilho, Quaternion.identity, mapaGerado[posicaoOuro].transform).name = "Brilho";
+
+        gridInfo[posicaoOuro].temOuro = true;
     }
+
 
     private void SpawnarPlayer()
     {
