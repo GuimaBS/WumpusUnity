@@ -26,6 +26,8 @@ public class PlayerGridGenerator : MonoBehaviour
     [Header("Prefab do Wumpus e do Ouro")]
     public GameObject prefabWumpus;
     public GameObject prefabOuro;
+    public float rotacaoYWumpus = 0f;
+    public float rotacaoYOuro = 0f;
 
     [Header("Prefab de Bloqueio")]
     public GameObject prefabBloqueio;
@@ -161,6 +163,7 @@ public class PlayerGridGenerator : MonoBehaviour
     private void GarantirSalaSeguraEm00()
     {
         Vector2Int posInicial = new Vector2Int(0, 0);
+
         if (gridInfo[posInicial].temPoco)
         {
             Destroy(mapaGerado[posInicial]);
@@ -170,6 +173,21 @@ public class PlayerGridGenerator : MonoBehaviour
             GameObject novaSala = Instantiate(salaPrefab, Vector3.zero, Quaternion.identity, paiDasSalas);
             novaSala.name = "Sala (0,0)";
             mapaGerado.Add(posInicial, novaSala);
+
+            Debug.Log("[PlayerGridGenerator] Poço removido e sala (0,0) regenerada sem poço.");
+        }
+
+        if (mapaGerado[posInicial].GetComponentInChildren<RespawnPoint>() == null)
+        {
+            GameObject marcador = new GameObject("RespawnMarker");
+            marcador.transform.parent = mapaGerado[posInicial].transform;
+            marcador.transform.localPosition = offsetCentroSala;
+            marcador.AddComponent<RespawnPoint>();
+            Debug.Log("[PlayerGridGenerator] RespawnPoint adicionado automaticamente na sala (0,0) em " + marcador.transform.position);
+        }
+        else
+        {
+            Debug.Log("[PlayerGridGenerator] Sala (0,0) já possui um RespawnPoint.");
         }
     }
 
@@ -209,7 +227,8 @@ public class PlayerGridGenerator : MonoBehaviour
         } while (posicaoWumpus == Vector2Int.zero || gridInfo[posicaoWumpus].temPoco);
 
         Vector3 pos = mapaGerado[posicaoWumpus].transform.position + new Vector3(0, 0.5f, 0);
-        Instantiate(prefabWumpus, pos, Quaternion.identity, mapaGerado[posicaoWumpus].transform).tag = "wumpus";
+        Quaternion rot = Quaternion.Euler(0f, rotacaoYWumpus, 0f);
+        Instantiate(prefabWumpus, pos, rot, mapaGerado[posicaoWumpus].transform).tag = "wumpus";
 
         AplicarFedorNoWumpus(posicaoWumpus);
     }
@@ -246,8 +265,8 @@ public class PlayerGridGenerator : MonoBehaviour
                posicaoOuro == posicaoWumpus);
 
         Vector3 pos = mapaGerado[posicaoOuro].transform.position + new Vector3(0, 0.5f, 0);
-
-        GameObject ouroObj = Instantiate(prefabOuro, pos, Quaternion.identity, mapaGerado[posicaoOuro].transform);
+        Quaternion rot = Quaternion.Euler(0f, rotacaoYOuro, 0f);
+        GameObject ouroObj = Instantiate(prefabOuro, pos, rot, mapaGerado[posicaoOuro].transform);
         ouroObj.name = "ouro";
         ouroObj.tag = "ouro";
 
@@ -256,7 +275,6 @@ public class PlayerGridGenerator : MonoBehaviour
 
         gridInfo[posicaoOuro].temOuro = true;
     }
-
 
     private void SpawnarPlayer()
     {

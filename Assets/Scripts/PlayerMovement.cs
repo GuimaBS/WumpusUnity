@@ -3,34 +3,35 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("MovimentaÁ„o")]
+    [Header("Movimenta√ß√£o")]
     public float moveDistance = 10f;
     public float moveSpeed = 20f;
     public float rotationSpeed = 400f;
 
-    [Header("Invent·rio")]
+    [Header("Invent√°rio")]
     public int flechas = 3;
     public int ouro = 0;
     public int mortes = 0;
 
-    [Header("Colis„o")]
+    [Header("Colis√£o")]
     public LayerMask obstaculosLayer;
-    public Vector3 boxSize = new Vector3(1f, 2f, 1f);
 
     [Header("Flecha")]
     public GameObject prefabFlecha;
     public Transform pontoDeDisparo;
     public float delayDisparo = 0.2f;
 
-    [Header("PartÌculas")]
+    [Header("Part√≠culas")]
     public GameObject prefabParticulaColetar;
     public GameObject prefabParticulaMorte;
-    public GameObject prefabParticulaMorteWumpus; //PartÌcula especÌfica para morte pelo Wumpus
+    public GameObject prefabParticulaMorteWumpus;
     public GameObject prefabParticulaRespawn;
 
     [Header("Respawn")]
-    public Transform pontoDeSpawn;
-    public float alturaYCorreta = 0f;
+    public float alturaExtraRespawn = 0.2f;
+    public float offsetXRespawn = 0f;
+    public float offsetZRespawn = 0f;
+    public Vector3 offsetParticulaRespawn = new Vector3(0, 1f, 0);
 
     private Animator animator;
     private Collider playerCollider;
@@ -44,11 +45,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void Awake()
     {
-        if (pontoDeSpawn == null)
+        VerificarRespawnPoint();
+    }
+
+    private void VerificarRespawnPoint()
+    {
+        if (RespawnPoint.instancia == null)
         {
-            pontoDeSpawn = new GameObject("PontoDeSpawnAuto").transform;
-            pontoDeSpawn.position = Vector3.zero + PlayerGridGenerator.instancia.offsetCentroSala;
-            Debug.LogWarning("Ponto de Spawn n„o estava configurado. Gerado automaticamente na sala (0,0).");
+            GameObject obj = new GameObject("RespawnPointAuto");
+            obj.transform.position = Vector3.zero + PlayerGridGenerator.instancia.offsetCentroSala;
+            obj.AddComponent<RespawnPoint>();
+            Debug.LogWarning("Nenhum RespawnPoint encontrado. Criado automaticamente em (0,0).");
         }
     }
 
@@ -69,7 +76,7 @@ public class PlayerMovement : MonoBehaviour
         renderers = GetComponentsInChildren<Renderer>();
 
         if (animator == null)
-            Debug.LogWarning("Animator n„o encontrado!");
+            Debug.LogWarning("Animator n√£o encontrado!");
 
         targetPosition = transform.position;
         targetRotation = transform.rotation;
@@ -138,9 +145,7 @@ public class PlayerMovement : MonoBehaviour
         isMoving = true;
         targetPosition = destination;
 
-        bool salaValida = SalaExisteNaDirecao(direcao);
-
-        if (playerCollider != null && salaValida)
+        if (playerCollider != null)
             playerCollider.enabled = false;
 
         while (Vector3.Distance(transform.position, destination) > 0.01f)
@@ -174,11 +179,8 @@ public class PlayerMovement : MonoBehaviour
             Mathf.RoundToInt(transform.position.z / moveDistance)
         );
 
-        if (PlayerGridGenerator.instancia.gridInfo.ContainsKey(pos))
-        {
-            return PlayerGridGenerator.instancia.gridInfo[pos].temPoco;
-        }
-        return false;
+        return PlayerGridGenerator.instancia.gridInfo.ContainsKey(pos) &&
+               PlayerGridGenerator.instancia.gridInfo[pos].temPoco;
     }
 
     bool EstaEmSalaComWumpus()
@@ -193,7 +195,7 @@ public class PlayerMovement : MonoBehaviour
 
     IEnumerator MorrerNoPoco()
     {
-        Debug.Log("O jogador caiu no poÁo!");
+        Debug.Log("O jogador caiu no po√ßo!");
 
         isDying = true;
         mortes++;
@@ -202,36 +204,9 @@ public class PlayerMovement : MonoBehaviour
         animator?.SetTrigger("queda");
 
         if (prefabParticulaMorte != null)
-        {
             Instantiate(prefabParticulaMorte, transform.position + Vector3.up * 1f, Quaternion.identity);
-        }
 
-        CameraFollow cam = FindFirstObjectByType<CameraFollow>();
-        if (cam != null)
-        {
-            cam.DefinirAlvo(null);
-            cam.MoverParaPonto(transform.position);
-        }
-
-        if (playerCollider != null)
-            playerCollider.enabled = false;
-
-        foreach (var rend in renderers)
-            rend.enabled = true;
-
-        float alturaFinal = transform.position.y - 4f;
-        float velocidadeQueda = 5f;
-
-        while (transform.position.y > alturaFinal)
-        {
-            transform.position -= new Vector3(0, velocidadeQueda * Time.deltaTime, 0);
-            yield return null;
-        }
-
-        foreach (var rend in renderers)
-            rend.enabled = false;
-
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
 
         RespawnarPlayer();
     }
@@ -247,51 +222,40 @@ public class PlayerMovement : MonoBehaviour
         animator?.SetTrigger("dwumpus");
 
         if (prefabParticulaMorteWumpus != null)
-        {
             Instantiate(prefabParticulaMorteWumpus, transform.position + Vector3.up * 1f, Quaternion.identity);
-        }
 
-        CameraFollow cam = FindFirstObjectByType<CameraFollow>();
-        if (cam != null)
-        {
-            cam.DefinirAlvo(null);
-            cam.MoverParaPonto(transform.position);
-        }
-
-        if (playerCollider != null)
-            playerCollider.enabled = false;
-
-        foreach (var rend in renderers)
-            rend.enabled = true;
-
-        float alturaFinal = transform.position.y - 1.5f;
-        float velocidadeDesaparecer = 2f;
-
-        while (transform.position.y > alturaFinal)
-        {
-            transform.position -= new Vector3(0, velocidadeDesaparecer * Time.deltaTime, 0);
-            yield return null;
-        }
-
-        foreach (var rend in renderers)
-            rend.enabled = false;
-
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
 
         RespawnarPlayer();
     }
 
     void RespawnarPlayer()
     {
-        transform.position = new Vector3(
-            pontoDeSpawn.position.x,
-            alturaYCorreta,
-            pontoDeSpawn.position.z
+        if (RespawnPoint.instancia == null)
+        {
+            Debug.LogError("RespawnPoint n√£o est√° presente na cena!");
+            return;
+        }
+
+        Transform pontoRespawn = RespawnPoint.instancia.transform;
+
+        Vector3 posRespawn = new Vector3(
+            pontoRespawn.position.x + offsetXRespawn,
+            0f + alturaExtraRespawn,
+            pontoRespawn.position.z + offsetZRespawn
         );
 
-        targetPosition = transform.position;
+        transform.position = posRespawn;
+        targetPosition = posRespawn;
+
         targetRotation = Quaternion.identity;
         transform.rotation = targetRotation;
+
+        if (animator != null)
+        {
+            animator.Rebind();
+            animator.Update(0f);
+        }
 
         foreach (var rend in renderers)
             rend.enabled = true;
@@ -300,18 +264,15 @@ public class PlayerMovement : MonoBehaviour
             playerCollider.enabled = true;
 
         if (prefabParticulaRespawn != null)
-        {
-            Instantiate(prefabParticulaRespawn, transform.position + Vector3.up * 1f, Quaternion.identity);
-        }
+            Instantiate(prefabParticulaRespawn, transform.position + offsetParticulaRespawn, Quaternion.identity);
 
         CameraFollow cam = FindFirstObjectByType<CameraFollow>();
         if (cam != null)
-        {
             cam.DefinirAlvo(transform);
-        }
 
         AtualizarSalaAtual();
-        Debug.Log("Jogador respawnado na sala inicial.");
+
+        Debug.Log("Jogador respawnado na posi√ß√£o limpa sem Rigidbody.");
 
         isDying = false;
     }
@@ -343,9 +304,7 @@ public class PlayerMovement : MonoBehaviour
         yield return new WaitForSeconds(delayDisparo);
 
         if (prefabFlecha != null && pontoDeDisparo != null)
-        {
             Instantiate(prefabFlecha, pontoDeDisparo.position, Quaternion.LookRotation(transform.forward));
-        }
     }
 
     public void ColetarOuro()
@@ -399,11 +358,5 @@ public class PlayerMovement : MonoBehaviour
             UIManager.instancia.AtualizarOuro(ouro);
             UIManager.instancia.AtualizarMortes(mortes);
         }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireCube(targetPosition, boxSize);
     }
 }
