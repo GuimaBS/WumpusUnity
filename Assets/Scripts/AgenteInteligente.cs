@@ -19,6 +19,7 @@ public class AgenteInteligente : MonoBehaviour
     private Vector2Int posicaoAtual;
     private HashSet<Vector2Int> direcoesComFalha = new HashSet<Vector2Int>();
     private HashSet<Vector2Int> visitadas = new HashSet<Vector2Int>();
+    public gerarCSV loggerCSV;
 
     private void Start()
     {
@@ -28,6 +29,12 @@ public class AgenteInteligente : MonoBehaviour
         pontuacaoManager = PontuacaoManager.instancia;
 
         pontuacaoManager.AlterarPontuacao(0);
+
+        if (!loggerCSV)
+        {
+            loggerCSV = FindFirstObjectByType<gerarCSV>();
+            if (!loggerCSV) Debug.LogError("NÃ£o encontrou instÃ¢ncia de gerarCSV!");
+        }
 
         GameObject sliderObj = GameObject.FindWithTag("VelocidadeSlider");
         if (sliderObj != null)
@@ -52,19 +59,22 @@ public class AgenteInteligente : MonoBehaviour
             yield return StartCoroutine(MoverPara(proximaTile));
             posicaoAtual = proximaTile;
 
-            // Logs de percepção ao entrar na tile
+            // Logs de percepcao ao entrar na tile
             var info = tileManager.ObterInfoDaTile(posicaoAtual);
             if (info != null)
             {
                 if (info.temBrisa)
                     logManager.AdicionarLog("<color=lightblue>O Agente 2 sentiu brisa...</color>");
+                    if (loggerCSV) loggerCSV.RegistrarEvento("brisa", posicaoAtual, "Agente2");
                 if (info.temFedor)
                     logManager.AdicionarLog("<color=green>O Agente 2 sentiu um fedor...</color>");
+                    if (loggerCSV) loggerCSV.RegistrarEvento("fedor", posicaoAtual, "Agente2");
                 if (info.temOuro)
                     logManager.AdicionarLog("<color=yellow>O Agente 2 percebeu o brilho...</color>");
+                    if (loggerCSV) loggerCSV.RegistrarEvento("brilho", posicaoAtual, "Agente2");
             }
 
-            // Verificar morte por poço
+            // Verificar morte por poco
             if (VerificarSeCaiuEmPoco())
                 yield break;
 
@@ -94,7 +104,8 @@ public class AgenteInteligente : MonoBehaviour
 
             memoriaVisual.AtualizarTile(posicaoAtual, "poco");
 
-            logManager.AdicionarLog("<color=red><b>O Agente 2 caiu em um poço e morreu!</b></color>");
+            logManager.AdicionarLog("<color=red><b>O Agente 2 caiu em um poco e morreu!</b></color>");
+            if (loggerCSV) loggerCSV.RegistrarEvento("poco", posicaoAtual, "Agente2");
             pontuacaoManager.AlterarPontuacao(-1000);
             SistemaDePontuacao.instancia?.AdicionarDerrota();
             onMorte?.Invoke();
@@ -163,6 +174,7 @@ public class AgenteInteligente : MonoBehaviour
         {
             memoriaVisual.AtualizarTile(posicaoAtual, "wumpus");
             Morrer("<color=red><b>O Agente 2 foi morto pelo Wumpus!</b></color>");
+            if (loggerCSV) loggerCSV.RegistrarEvento("wumpus", posicaoAtual, "Agente2");
             return;
         }
 
@@ -176,12 +188,14 @@ public class AgenteInteligente : MonoBehaviour
             if (TentarAtirar(posicaoAtual))
             {
                 logManager.AdicionarLog("<color=purple><b>O Agente 2 atirou a flecha e matou o Wumpus!</b></color>");
+                if (loggerCSV) loggerCSV.RegistrarEvento("matou", posicaoAtual, "Agente2");
                 pontuacaoManager.AlterarPontuacao(+1000);
                 SistemaDePontuacao.instancia?.AdicionarVitoria();
             }
             else
             {
                 logManager.AdicionarLog("<color=purple>O Agente 2 errou a flecha!</color>");
+                if (loggerCSV) loggerCSV.RegistrarEvento("falhou", posicaoAtual, "Agente2");
                 pontuacaoManager.AlterarPontuacao(-100);
                 direcoesComFalha.Add(posicaoAtual);
             }
