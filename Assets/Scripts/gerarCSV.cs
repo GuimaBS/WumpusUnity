@@ -17,9 +17,9 @@ public class gerarCSV : MonoBehaviour
         caminhoArquivo = Path.Combine(pasta, "log_mortes.csv");
     }
 
-    public void RegistrarEvento(string evento, Vector3 posicao, string agente)
+    public void RegistrarEvento(string evento, Vector2Int posicao, string agente)
     {
-        string linha = $"{evento};{agente};{posicao.x};{posicao.y};{Time.time}";
+        string linha = $"{evento};{agente};{posicao};{Time.time}";
         eventos.Add(linha);
         Debug.Log($"Evento armazenado na memória: {linha}");
     }
@@ -29,7 +29,7 @@ public class gerarCSV : MonoBehaviour
         if (!File.Exists(caminhoArquivo))
         {
             // Cria o arquivo com cabeçalho
-            File.WriteAllText(caminhoArquivo, "Evento;Agente;Posição X;Posição Y;Tempo(ms)\n");
+            File.WriteAllText(caminhoArquivo, "Evento;Agente;Posicao;Tempo(ms)\n");
         }
         
         // Adiciona eventos registrados

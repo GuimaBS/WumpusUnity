@@ -50,12 +50,20 @@ public class AgenteReativo : MonoBehaviour
             var info = tileManager.ObterInfoDaTile(posicaoAtual);
             if (info != null)
             {
-                if (info.temBrisa)
+                if (loggerCSV) loggerCSV.RegistrarEvento("Andar", posicaoAtual, "Agente1");
+
+                if (info.temBrisa){
                     LogManager.instancia.AdicionarLog("<color=lightblue>O Agente 1 sentiu brisa...</color>");
-                if (info.temFedor)
+                    if (loggerCSV) loggerCSV.RegistrarEvento("brisa", posicaoAtual, "Agente1");
+                }
+                if (info.temFedor){
                     LogManager.instancia.AdicionarLog("<color=green>O Agente 1 sentiu um fedor...</color>");
-                if (info.temOuro)
+                    if (loggerCSV) loggerCSV.RegistrarEvento("fedor", posicaoAtual, "Agente1");
+                }
+                if (info.temOuro){
                     LogManager.instancia.AdicionarLog("<color=yellow>O Agente 1 percebeu o brilho...</color>");
+                    if (loggerCSV) loggerCSV.RegistrarEvento("brilho", posicaoAtual, "Agente1");
+                }
             }
 
             // 🔴 Verificar morte por poço
@@ -64,7 +72,7 @@ public class AgenteReativo : MonoBehaviour
                 TileP tileP = tileManager.ObterTilePNaPosicao(posicaoAtual);
                 if (tileP != null) tileP.AtivarFantasma();
 
-                if (loggerCSV) loggerCSV.RegistrarEvento("MortePoco", transform.position, "Agente1");
+                if (loggerCSV) loggerCSV.RegistrarEvento("poco", posicaoAtual, "Agente1");
                 LogManager.instancia.AdicionarLog("<color=red> O Agente caiu em um poço e morreu.</color>");
                 onMorte?.Invoke();
                 Destroy(gameObject);
@@ -76,7 +84,7 @@ public class AgenteReativo : MonoBehaviour
             // 🔴 Verificar morte por Wumpus
             if (GridGenerator.posicoesWumpus.Contains(posicaoAtual))
             {
-                if (loggerCSV) loggerCSV.RegistrarEvento("MorteWumpus", transform.position, "Agente1");
+                if (loggerCSV) loggerCSV.RegistrarEvento("wumpus", posicaoAtual, "Agente1");
                 LogManager.instancia.AdicionarLog("<color=red> O Agente foi morto pelo Wumpus.</color>");
                 onMorte?.Invoke();
                 Destroy(gameObject);
@@ -98,7 +106,7 @@ public class AgenteReativo : MonoBehaviour
                     {
                         Destroy(col.gameObject);
                         pegouOuro = true;
-                        if (loggerCSV) loggerCSV.RegistrarEvento("PegarOuro", transform.position, "Agente1");
+                        if (loggerCSV) loggerCSV.RegistrarEvento("ouro", posicaoAtual, "Agente1");
                         LogManager.instancia.AdicionarLog("<color=yellow>O Agente pegou o ouro!</color>");
                         PontuacaoManager.instancia.AlterarPontuacao(+1000);
                     }
@@ -109,7 +117,7 @@ public class AgenteReativo : MonoBehaviour
             if (pegouOuro && posicaoAtual == new Vector2Int(0, 0))
             {
                 LogManager.instancia.AdicionarLog("<color=yellow><b>O Agente voltou para a base com o ouro! Vitória!</b></color>");
-                if (loggerCSV) loggerCSV.RegistrarEvento("VitoriaComOuro", transform.position, "Agente1");
+                if (loggerCSV) loggerCSV.RegistrarEvento("vitoria", posicaoAtual, "Agente1");
                 SistemaDePontuacao.instancia?.AdicionarVitoria();
                 PontuacaoManager.instancia.AlterarPontuacao(+2000);
                 onMorte?.Invoke();
@@ -148,7 +156,7 @@ public class AgenteReativo : MonoBehaviour
 
                             GridGenerator.EliminarWumpusNaPosicao(posWumpus);
 
-                            if (loggerCSV) loggerCSV.RegistrarEvento("AtirarAcerto", transform.position, "Agente1");
+                            if (loggerCSV) loggerCSV.RegistrarEvento("matou", posicaoAtual, "Agente1");
                             LogManager.instancia.AdicionarLog("<color=orange>O Agente matou o Wumpus com uma flecha!</color>");
                             PontuacaoManager.instancia.AlterarPontuacao(+1000);
                         }
