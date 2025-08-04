@@ -20,6 +20,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ClassicScene.unity
     guid: 7574496fef97aea469ef000d2d5ce4b2
+  - enabled: 1
+    path: Assets/Scenes/TabeladePontos.unity
+    guid: ff2d9f8bb9cd3a749b4baa0c1d7688cb
+  - enabled: 1
+    path: Assets/Scenes/TowerScene.unity
+    guid: 97ac311467e22724fb5ec252bbdfcf33
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

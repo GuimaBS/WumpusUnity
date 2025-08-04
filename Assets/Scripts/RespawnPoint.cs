@@ -6,14 +6,13 @@ public class RespawnPoint : MonoBehaviour
 
     private void Awake()
     {
-        if (instancia == null)
+        // sem conflito
+        if (instancia != null && instancia != this)
         {
-            instancia = this;
-            Debug.Log($"[RespawnPoint] Registrado em {transform.position}");
+            Destroy(gameObject);
+            return;
         }
-        else
-        {
-            Debug.LogWarning("[RespawnPoint] Já existe uma instância ativa! Esta será ignorada.");
-        }
+
+        instancia = this;
     }
 }

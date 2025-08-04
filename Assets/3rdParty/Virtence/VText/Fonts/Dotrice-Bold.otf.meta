@@ -1,0 +1,30 @@
+fileFormatVersion: 2
+guid: 7217d572dfeb8aa4e95b3e6266727717
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Dotrice
+  fontNames:
+  - Dotrice
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: dbcdec46601fa924aa9456e6dd1e5fae, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 173237
+  packageName: VText Pro
+  packageVersion: 1.2
+  assetPath: Assets/3rdParty/Virtence/VText/Fonts/Dotrice-Bold.otf
+  uploadId: 430890

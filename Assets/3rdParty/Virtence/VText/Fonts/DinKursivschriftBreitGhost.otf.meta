@@ -1,0 +1,30 @@
+fileFormatVersion: 2
+guid: 4874c3a992221e440a7ac8369971c452
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Din Kursivschrift
+  fontNames:
+  - Din Kursivschrift
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 951e6e59e864e1b498fb70561a40892a, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 173237
+  packageName: VText Pro
+  packageVersion: 1.2
+  assetPath: Assets/3rdParty/Virtence/VText/Fonts/DinKursivschriftBreitGhost.otf
+  uploadId: 430890

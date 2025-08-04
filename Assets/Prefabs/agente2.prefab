@@ -64,6 +64,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: agente2
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 17d25ed0412564c4b9014e1cc2b5415b, type: 3}
+      propertyPath: m_TagString
+      value: agente2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 17d25ed0412564c4b9014e1cc2b5415b, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 9da2056f301f2e74eafcc74fc8b90093, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 65702495048144492, guid: 17d25ed0412564c4b9014e1cc2b5415b, type: 3}
@@ -93,3 +101,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitEffectPrefab: {fileID: 7728772344407986051, guid: 071140c5c6878bc4b92f53478df7c13b, type: 3}
   pickEffectPrefab: {fileID: 2078536211965194912, guid: 9249d9e3bac7ac74eb27a2f88c452e6f, type: 3}
+  loggerCSV: {fileID: 0}

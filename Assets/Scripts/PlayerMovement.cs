@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -12,20 +13,31 @@ public class PlayerMovement : MonoBehaviour
     public int flechas = 3;
     public int ouro = 0;
     public int mortes = 0;
+    public int dwumpus = 0;
 
     [Header("Colisão")]
     public LayerMask obstaculosLayer;
 
+    [Header("Partículas de Acerto/Erro do Wumpus")]
+    public GameObject particulaAcertoWumpus;
+    public GameObject particulaErroWumpus;
+
     [Header("Flecha")]
     public GameObject prefabFlecha;
     public Transform pontoDeDisparo;
-    public float delayDisparo = 0.2f;
+    public float delayDisparo = 0.25f;
 
     [Header("Partículas")]
     public GameObject prefabParticulaColetar;
     public GameObject prefabParticulaMorte;
     public GameObject prefabParticulaMorteWumpus;
     public GameObject prefabParticulaRespawn;
+    public GameObject prefabParticulaVitoria;
+    public GameObject particulaBatidaLimite;
+
+    [Header("Offset da Partícula da barreira")]
+    public Vector3 offsetparticulaBatidaLimite = Vector3.zero;
+
 
     [Header("Respawn")]
     public float alturaExtraRespawn = 0.2f;
@@ -36,12 +48,16 @@ public class PlayerMovement : MonoBehaviour
     private Animator animator;
     private Collider playerCollider;
     private Renderer[] renderers;
+    private Transform salaFocus;
 
     private bool isMoving = false;
     private bool isDying = false;
+    private bool vitoriaAlcancada = false;
+    private Vector2Int posicaoAtual;
 
     private Vector3 targetPosition;
     private Quaternion targetRotation;
+    private PlayerGridGenerator gridGen;
 
     private void Awake()
     {
@@ -71,6 +87,19 @@ public class PlayerMovement : MonoBehaviour
 
     void Start()
     {
+        GameObject salaFocusObj = new GameObject("SalaFocus");
+        salaFocus = salaFocusObj.transform;
+        gridGen = PlayerGridGenerator.instancia;
+
+        CameraFollow cam = FindFirstObjectByType<CameraFollow>();
+        if (cam != null)
+        {
+            cam.DefinirAlvo(salaFocus);
+            cam.offset = new Vector3(0, 4, -7);
+        }
+
+        AtualizarSalaAtual();
+
         animator = GetComponentInChildren<Animator>();
         playerCollider = GetComponent<Collider>();
         renderers = GetComponentsInChildren<Renderer>();
@@ -82,6 +111,8 @@ public class PlayerMovement : MonoBehaviour
         targetRotation = transform.rotation;
 
         AtualizarUI();
+        RegistrarWumpusEPoco();
+        AtualizarMapaVisual();
     }
 
     void Update()
@@ -95,12 +126,14 @@ public class PlayerMovement : MonoBehaviour
     public void RotateLeft()
     {
         if (isMoving || isDying) return;
+        animator?.SetTrigger("girarEs");
         targetRotation *= Quaternion.Euler(0, -90, 0);
     }
 
     public void RotateRight()
     {
         if (isMoving || isDying) return;
+        animator?.SetTrigger("girarDir");
         targetRotation *= Quaternion.Euler(0, 90, 0);
     }
 
@@ -119,11 +152,20 @@ public class PlayerMovement : MonoBehaviour
         if (!SalaExisteNaDirecao(dir))
         {
             Debug.Log("Tentativa de sair do mapa bloqueada!");
+            if (particulaBatidaLimite != null)
+                Instantiate(particulaBatidaLimite, transform.position + offsetparticulaBatidaLimite, Quaternion.identity);
             return;
         }
 
         StartCoroutine(MoveToPosition(destination, dir));
+
+        animator?.SetTrigger("foward");
+
+        TimerPontuacaoController.passosDados++; //
+        TimerPontuacaoController.pontuacaoFinal -= 1; // Desconto de pontuação por passo
+        UIManager.instancia?.AlterarPontuacao(-1);
     }
+
 
     bool SalaExisteNaDirecao(Vector3 direcao)
     {
@@ -161,6 +203,7 @@ public class PlayerMovement : MonoBehaviour
             playerCollider.enabled = true;
 
         AtualizarSalaAtual();
+        ChecarCondicaoDeVitoria();
 
         if (EstaEmSalaComPoco())
         {
@@ -170,6 +213,9 @@ public class PlayerMovement : MonoBehaviour
         {
             StartCoroutine(MorrerParaOWumpus());
         }
+
+        RegistrarWumpusEPoco();
+        AtualizarMapaVisual();
     }
 
     bool EstaEmSalaComPoco()
@@ -199,24 +245,54 @@ public class PlayerMovement : MonoBehaviour
 
         isDying = true;
         mortes++;
+        TimerPontuacaoController.mortes = mortes;
         AtualizarUI();
 
         animator?.SetTrigger("queda");
 
         if (prefabParticulaMorte != null)
             Instantiate(prefabParticulaMorte, transform.position + Vector3.up * 1f, Quaternion.identity);
-
+        UIManager.instancia?.AlterarPontuacao(-1000);
+        TimerPontuacaoController.pontuacaoFinal -= 1000;
         yield return new WaitForSeconds(1f);
 
         RespawnarPlayer();
+        ChecarCondicaoDeVitoria();
     }
 
     IEnumerator MorrerParaOWumpus()
     {
-        Debug.Log("O jogador foi devorado pelo Wumpus!");
+        Debug.Log("O jogador foi morto pelo Wumpus!");
+
+        // Identifica a posição atual do player
+        Vector2Int pos = new Vector2Int(
+            Mathf.RoundToInt(transform.position.x / moveDistance),
+            Mathf.RoundToInt(transform.position.z / moveDistance)
+        );
+
+        // Ativa a animação
+        if (PlayerGridGenerator.instancia.mapaGerado.TryGetValue(pos, out GameObject sala))
+        {
+            foreach (Transform child in sala.transform)
+            {
+                if (child.CompareTag("wumpus"))
+                {
+                    Animator animWumpus = child.GetComponent<Animator>();
+                    if (animWumpus != null)
+                    {
+                        animWumpus.SetTrigger("wattack");
+                        animator?.SetTrigger("queda");
+                    }
+                    break;
+                }
+            }
+        }
+
+        yield return new WaitForSeconds(0.1f);
 
         isDying = true;
         mortes++;
+        TimerPontuacaoController.mortes = mortes;
         AtualizarUI();
 
         animator?.SetTrigger("dwumpus");
@@ -224,10 +300,14 @@ public class PlayerMovement : MonoBehaviour
         if (prefabParticulaMorteWumpus != null)
             Instantiate(prefabParticulaMorteWumpus, transform.position + Vector3.up * 1f, Quaternion.identity);
 
+        UIManager.instancia?.AlterarPontuacao(-1000);
+        TimerPontuacaoController.pontuacaoFinal -= 1000;
+
         yield return new WaitForSeconds(1f);
 
         RespawnarPlayer();
     }
+
 
     void RespawnarPlayer()
     {
@@ -237,24 +317,33 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        Transform pontoRespawn = RespawnPoint.instancia.transform;
+        Vector3 posRespawn = RespawnPoint.instancia.transform.position + new Vector3(0.2f, alturaExtraRespawn, -0.35f);
 
-        Vector3 posRespawn = new Vector3(
-            pontoRespawn.position.x + offsetXRespawn,
-            0f + alturaExtraRespawn,
-            pontoRespawn.position.z + offsetZRespawn
-        );
-
-        transform.position = posRespawn;
-        targetPosition = posRespawn;
-
-        targetRotation = Quaternion.identity;
-        transform.rotation = targetRotation;
+        transform.SetPositionAndRotation(posRespawn, Quaternion.identity);
+        targetPosition = transform.position;
+        targetRotation = transform.rotation;
 
         if (animator != null)
         {
+            animator.applyRootMotion = false;
             animator.Rebind();
             animator.Update(0f);
+        }
+
+        Transform visual = transform.Find("Visual");
+        if (visual != null)
+        {
+            visual.localPosition = Vector3.zero;
+
+            Transform char1ajustado = visual.Find("Char1_ajustado");
+            if (char1ajustado != null)
+            {
+                char1ajustado.localPosition = Vector3.zero;
+
+                Transform char1 = char1ajustado.Find("Char1");
+                if (char1 != null)
+                    char1.localPosition = Vector3.zero;
+            }
         }
 
         foreach (var rend in renderers)
@@ -266,13 +355,9 @@ public class PlayerMovement : MonoBehaviour
         if (prefabParticulaRespawn != null)
             Instantiate(prefabParticulaRespawn, transform.position + offsetParticulaRespawn, Quaternion.identity);
 
-        CameraFollow cam = FindFirstObjectByType<CameraFollow>();
-        if (cam != null)
-            cam.DefinirAlvo(transform);
-
         AtualizarSalaAtual();
-
-        Debug.Log("Jogador respawnado na posição limpa sem Rigidbody.");
+        Debug.Log("Jogador respawnado corretamente na sala (0,0), câmera reposicionada.");
+        ChecarCondicaoDeVitoria();
 
         isDying = false;
     }
@@ -280,9 +365,16 @@ public class PlayerMovement : MonoBehaviour
     void AtualizarSalaAtual()
     {
         Vector2Int pos = new Vector2Int(
-            Mathf.RoundToInt(transform.position.x / moveDistance),
-            Mathf.RoundToInt(transform.position.z / moveDistance)
+            Mathf.RoundToInt(transform.position.x / PlayerGridGenerator.instancia.espacoEntreSalas),
+            Mathf.RoundToInt(transform.position.z / PlayerGridGenerator.instancia.espacoEntreSalas)
         );
+
+        if (salaFocus != null)
+        {
+            Vector3 centroSala = new Vector3(pos.x, 0, pos.y) * PlayerGridGenerator.instancia.espacoEntreSalas;
+            centroSala += PlayerGridGenerator.instancia.offsetCentroSala;
+            salaFocus.position = centroSala;
+        }
 
         SalaManager.instancia?.AtualizarSalasAtivas(pos);
     }
@@ -293,19 +385,70 @@ public class PlayerMovement : MonoBehaviour
 
         flechas--;
         AtualizarUI();
-
         animator?.SetTrigger("Atirar");
+        StartCoroutine(DispararFlechaComDelay(0.3f));
 
-        StartCoroutine(DispararFlechaComDelay());
     }
 
-    IEnumerator DispararFlechaComDelay()
+    IEnumerator DispararFlechaComDelay(float delay)
     {
-        yield return new WaitForSeconds(delayDisparo);
+        yield return new WaitForSeconds(delay);
 
         if (prefabFlecha != null && pontoDeDisparo != null)
             Instantiate(prefabFlecha, pontoDeDisparo.position, Quaternion.LookRotation(transform.forward));
+
+        Vector3 direcao = new Vector3(
+            Mathf.RoundToInt(transform.forward.x),
+            0,
+            Mathf.RoundToInt(transform.forward.z)
+        );
+
+        Vector2Int posAtual = new Vector2Int(
+            Mathf.RoundToInt(transform.position.x / moveDistance),
+            Mathf.RoundToInt(transform.position.z / moveDistance)
+        );
+
+        Vector2Int posAlvo = posAtual + new Vector2Int(
+            Mathf.RoundToInt(direcao.x),
+            Mathf.RoundToInt(direcao.z)
+        );
+
+        Debug.Log($"[Debug Tiro] Posição do alvo: {posAlvo}, Wumpus está em: {PlayerGridGenerator.instancia.posicaoWumpus}");
+
+        if (posAlvo == PlayerGridGenerator.instancia.posicaoWumpus &&
+    PlayerGridGenerator.instancia.gridInfo.ContainsKey(posAlvo))
+        {
+            PlayerGridGenerator.instancia.EliminarWumpusNaPosicao(posAlvo);
+
+            if (particulaAcertoWumpus != null)
+                Instantiate(particulaAcertoWumpus, transform.position + Vector3.up * 2f, Quaternion.identity);
+            dwumpus++;
+            UIManager.instancia?.AlterarPontuacao(1000);
+            ChecarCondicaoDeVitoria();
+
+            AtualizarUI();
+            UIManager.instancia?.AtualizarDWumpus(dwumpus);
+            PlayerGridGenerator.instancia?.RegistrarWumpusMorto();
+
+            TimerPontuacaoController.pontuacaoFinal += 1000;
+
+
+            Debug.Log("Você acertou o Wumpus!");
+
+            //invalida a posição do Wumpus para impedir múltiplos acertos
+            PlayerGridGenerator.instancia.posicaoWumpus = new Vector2Int(-1, -1);
+        }
+        else
+        {
+            if (particulaErroWumpus != null)
+                Instantiate(particulaErroWumpus, transform.position + Vector3.up * 2f, Quaternion.identity);
+
+            Debug.Log("Você errou o tiro.");
+            UIManager.instancia?.AlterarPontuacao(-500);
+            LogManager.instancia?.AdicionarLog("Você errou o tiro...");
+        }
     }
+
 
     public void ColetarOuro()
     {
@@ -325,7 +468,7 @@ public class PlayerMovement : MonoBehaviour
             if (info.temOuro)
             {
                 ouro++;
-                info.temOuro = false;
+                UIManager.instancia?.AlterarPontuacao(1000);
 
                 GameObject sala = PlayerGridGenerator.instancia.mapaGerado[posAtual];
 
@@ -343,6 +486,10 @@ public class PlayerMovement : MonoBehaviour
 
                 AtualizarUI();
                 Debug.Log("Ouro coletado!");
+                PlayerGridGenerator.instancia?.RegistrarOuroColetado();
+
+                TimerPontuacaoController.pontuacaoFinal += 1000;
+                ChecarCondicaoDeVitoria();
                 return;
             }
         }
@@ -357,6 +504,114 @@ public class PlayerMovement : MonoBehaviour
             UIManager.instancia.AtualizarFlechas(flechas);
             UIManager.instancia.AtualizarOuro(ouro);
             UIManager.instancia.AtualizarMortes(mortes);
+            UIManager.instancia.AtualizarDWumpus(dwumpus);
         }
     }
+
+    private void ChecarCondicaoDeVitoria()
+    {
+        if (vitoriaAlcancada) return;
+
+        bool ouroColetado = ouro > 0;
+        bool wumpusMorto = dwumpus > 0;
+
+        Vector2Int pos = PlayerGridGenerator.instancia.ConverterPosicaoMundoParaGrid(transform.position);
+        bool estaNaSalaInicial = pos == new Vector2Int(0, 0);
+
+        Debug.Log($"[CHECAGEM VITÓRIA] ouro: {ouroColetado}, wumpus: {wumpusMorto}, pos: {pos}");
+
+        if (ouroColetado && wumpusMorto && estaNaSalaInicial)
+        {
+            AplicarVitoria();
+        }
+        else if (ouroColetado && wumpusMorto && !estaNaSalaInicial)
+        {
+            Debug.Log("[VITÓRIA] Ouro e Wumpus obtidos. Retorne à sala inicial para vencer.");
+        }
+    }
+
+    private void AplicarVitoria()
+    {
+        if (vitoriaAlcancada) return;
+
+        vitoriaAlcancada = true;
+
+        TimerPontuacaoController.TempoTotal = Time.time - TimerPontuacaoController.tempoInicio;
+        TimerPontuacaoController.pontuacaoFinal += 2000;
+
+        Debug.Log("[VITÓRIA] Condição alcançada! Ativando painel de vitória.");
+
+        if (prefabParticulaVitoria != null)
+            Instantiate(prefabParticulaVitoria, transform.position + Vector3.up * 1f, Quaternion.identity);
+
+        animator?.SetTrigger("win");
+        UIManager.instancia?.MostrarPainelVitoria();
+    }
+
+    void AtualizarMapaVisual()
+    {
+        if (gridGen == null || MapaVisualPlayer.instancia == null)
+        {
+            Debug.LogError("gridGen ou MapaVisualPlayer está nulo!");
+            return;
+        }
+
+        Vector2Int pos = new Vector2Int(
+            Mathf.RoundToInt(transform.position.x / moveDistance),
+            Mathf.RoundToInt(transform.position.z / moveDistance)
+        );
+
+        // Marca como visitada
+        if (gridGen.gridInfo.TryGetValue(pos, out PlayerGridGenerator.TileInfo info))
+        {
+            info.foiVisitada = true;
+
+            if (info.temWumpus)
+                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "wumpus" });
+            else if (info.temPoco)
+                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "poco" });
+            else if (info.temOuro)
+                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "brilho" });
+            else if (info.temFedor)
+                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "fedor" });
+            else if (info.temBrisa)
+                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "brisa" });
+            else
+                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "vazio" });
+        }
+        else
+        {
+            MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "desconhecido" });
+        }
+    }
+
+    void RegistrarWumpusEPoco()
+    {
+        Vector2Int pos = new Vector2Int(
+            Mathf.RoundToInt(transform.position.x / moveDistance),
+            Mathf.RoundToInt(transform.position.z / moveDistance)
+        );
+
+        if (!gridGen.gridInfo.TryGetValue(pos, out PlayerGridGenerator.TileInfo info))
+            return;
+
+        // Cria ou recupera a lista de sensações já registradas no dicionário
+        if (!gridGen.sensacoesPorPosicao.ContainsKey(pos))
+            gridGen.sensacoesPorPosicao[pos] = new List<string>();
+
+        var sensacoes = gridGen.sensacoesPorPosicao[pos];
+
+        if (info.temWumpus && !sensacoes.Contains("wumpus"))
+            sensacoes.Add("wumpus");
+
+        if (info.temPoco && !sensacoes.Contains("poco"))
+            sensacoes.Add("poco");
+
+        if (sensacoes.Count == 0 && !sensacoes.Contains("vazio"))
+            sensacoes.Add("vazio");
+
+        // Atualiza a visualização da tile com as sensações registradas
+        MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string>(sensacoes));
+    }
+
 }

@@ -6,7 +6,7 @@ public class Flecha : MonoBehaviour
 {
     [Header("Configurações")]
     public float velocidade = 20f;
-    public float alcanceMaximo = 50f;
+    public float alcanceMaximo = 10f;
     public float tempoDeVida = 3f;
 
     [Header("Efeito Visual")]

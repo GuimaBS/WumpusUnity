@@ -45,6 +45,7 @@ public class MenuController : MonoBehaviour
         SceneManager.LoadScene("GameScene");
 
     }
+
     public void FecharAviso()
     {
         warningPanel.SetActive(false);

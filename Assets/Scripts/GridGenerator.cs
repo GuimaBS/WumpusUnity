@@ -51,8 +51,15 @@ public class GridGenerator : MonoBehaviour
         instanciasWumpus.Clear();
         efeitosFedor.Clear();
 
-        xSize = PlayerPrefs.GetInt("mapX", 5);
-        ySize = PlayerPrefs.GetInt("mapY", 5);
+        if (!PlayerPrefs.HasKey("mapX") || !PlayerPrefs.HasKey("mapY"))
+        {
+            Debug.LogError("[GridGenerator] mapX ou mapY não foram definidos! Verifique o fluxo de geração.");
+            return; // ou Application.Quit() ou carregar tela de erro
+        }
+
+        xSize = PlayerPrefs.GetInt("mapX");
+        ySize = PlayerPrefs.GetInt("mapY");
+
 
         tamanhoX = xSize;
         tamanhoY = ySize;

@@ -19,6 +19,8 @@ public class AgenteInteligente : MonoBehaviour
     private Vector2Int posicaoAtual;
     private HashSet<Vector2Int> direcoesComFalha = new HashSet<Vector2Int>();
     private HashSet<Vector2Int> visitadas = new HashSet<Vector2Int>();
+    private Vector2Int ultimaDirecao = Vector2Int.zero;
+
     public gerarCSV loggerCSV;
 
     private void Start()
@@ -117,32 +119,58 @@ public class AgenteInteligente : MonoBehaviour
 
     private Vector2Int EscolherProximaTile()
     {
-        List<Vector2Int> candidatos = new List<Vector2Int>();
+        List<Vector2Int> candidatasNaoVisitadas = new List<Vector2Int>();
+        List<Vector2Int> candidatasVisitadasSeguras = new List<Vector2Int>();
 
         foreach (Vector2Int dir in Direcoes())
         {
             Vector2Int vizinho = posicaoAtual + dir;
 
-            if (!visitadas.Contains(vizinho) &&
-                tileManager.ObterTileEm(vizinho) != null &&
+            if (tileManager.ObterTileEm(vizinho) != null &&
                 memoriaVisual.TilePareceSegura(vizinho))
             {
-                candidatos.Add(vizinho);
+                if (!visitadas.Contains(vizinho))
+                    candidatasNaoVisitadas.Add(dir);
+                else
+                    candidatasVisitadasSeguras.Add(dir);
             }
         }
 
-        if (candidatos.Count > 0)
-            return candidatos[Random.Range(0, candidatos.Count)];
+        if (candidatasNaoVisitadas.Count > 0)
+        {
+            Vector2Int direcaoEscolhida = candidatasNaoVisitadas[Random.Range(0, candidatasNaoVisitadas.Count)];
+            ultimaDirecao = direcaoEscolhida;
+            return posicaoAtual + direcaoEscolhida;
+        }
 
+        if (candidatasVisitadasSeguras.Count > 0)
+        {
+            // Evita retrocesso imediato
+            List<Vector2Int> semReverso = candidatasVisitadasSeguras.FindAll(dir => dir != -ultimaDirecao);
+
+            Vector2Int direcaoEscolhida = (semReverso.Count > 0)
+                ? semReverso[Random.Range(0, semReverso.Count)]
+                : candidatasVisitadasSeguras[Random.Range(0, candidatasVisitadasSeguras.Count)];
+
+            ultimaDirecao = direcaoEscolhida;
+            return posicaoAtual + direcaoEscolhida;
+        }
+
+        // Nunca retorna a mesma tile — se tudo falhar, apenas tenta se mover em qualquer direção possível
         foreach (Vector2Int dir in Direcoes())
         {
             Vector2Int vizinho = posicaoAtual + dir;
             if (tileManager.ObterTileEm(vizinho) != null)
+            {
+                ultimaDirecao = dir;
                 return vizinho;
+            }
         }
 
+        Debug.LogWarning("Agente2 está preso sem tiles acessíveis.");
         return posicaoAtual;
     }
+
 
     private IEnumerator MoverPara(Vector2Int destino)
     {

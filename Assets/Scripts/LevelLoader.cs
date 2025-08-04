@@ -13,6 +13,8 @@ public class LevelLoader : MonoBehaviour
     public List<int> indicesOrigem;
     public List<int> indicesDestino;
 
+    public int indiceGameScene = 2;
+
     private void Start()
     {
         if (indicesOrigem.Count != indicesDestino.Count)
@@ -37,8 +39,36 @@ public class LevelLoader : MonoBehaviour
 
     public void LoadSpecificLevel(int sceneIndex)
     {
+        string nomeCena = SceneManager.GetSceneByBuildIndex(sceneIndex).name;
+
+        if (nomeCena == "GameScene")
+        {
+            int x = PlayerPrefs.GetInt("mapX", -1);
+            int y = PlayerPrefs.GetInt("mapY", -1);
+
+            // Verifica se os valores são válidos (mínimo 4 e máximo 20)
+            if (x < 4 || y < 4 || x > 20 || y > 20)
+            {
+                Debug.LogWarning("[LevelLoader] Parâmetros do mapa inválidos. Cancelando transição para GameScene.");
+                return;
+            }
+        }
+
         StartCoroutine(LoadLevel(sceneIndex));
     }
+
+
+    IEnumerator LoadLevel(string nomeCena)
+    {
+        if (transition != null)
+        {
+            transition.SetTrigger("Start");
+            yield return new WaitForSeconds(transitionTime);
+        }
+
+        SceneManager.LoadScene(nomeCena);
+    }
+
 
     IEnumerator LoadLevel(int levelIndex)
     {
@@ -70,4 +100,12 @@ public class LevelLoader : MonoBehaviour
             return indexAtual - 1;
         }
     }
+
+    private bool ParametrosMapaValidos()
+    {
+        int x = PlayerPrefs.GetInt("mapX", -1);
+        int y = PlayerPrefs.GetInt("mapY", -1);
+        return x >= 4 && y >= 4 && x <= 20 && y <= 20;
+    }
+
 }

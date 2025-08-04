@@ -23,6 +23,9 @@ TagManager:
   - SalaP
   - salap
   - flecha
+  - agente2
+  - agente1
+  - agente3
   layers:
   - Default
   - TransparentFX

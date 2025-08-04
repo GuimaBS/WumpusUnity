@@ -56,6 +56,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 9da2056f301f2e74eafcc74fc8b90093, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 5d94fe5b440d8cf4cacfa551eca15dcd, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 65702495048144492, guid: 5d94fe5b440d8cf4cacfa551eca15dcd, type: 3}
@@ -86,3 +90,20 @@ MonoBehaviour:
   moveDistance: 2
   moveSpeed: 5
   rotationSpeed: 300
+  flechas: 3
+  ouro: 0
+  mortes: 0
+  obstaculosLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  prefabFlecha: {fileID: 0}
+  pontoDeDisparo: {fileID: 0}
+  delayDisparo: 0.2
+  prefabParticulaColetar: {fileID: 0}
+  prefabParticulaMorte: {fileID: 0}
+  prefabParticulaMorteWumpus: {fileID: 0}
+  prefabParticulaRespawn: {fileID: 0}
+  alturaExtraRespawn: 0.2
+  offsetXRespawn: 0
+  offsetZRespawn: 0
+  offsetParticulaRespawn: {x: 0, y: 1, z: 0}

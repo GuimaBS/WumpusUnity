@@ -134,10 +134,14 @@ public class AgenteManager : MonoBehaviour
         Vector3 posicaoMundo = new Vector3(posicaoWumpus.x * 1.7f, 0.5f, posicaoWumpus.y * 1.7f);
 
         // Instancia o Wumpus
-        Instantiate(wumpusPrefab, posicaoMundo, Quaternion.Euler(0, 180f, 0));
+        GameObject wumpusInstanciado = Instantiate(wumpusPrefab, posicaoMundo, Quaternion.Euler(0, 180f, 0));
 
         // Adiciona no GridGenerator
         GridGenerator.posicoesWumpus.Add(posicaoWumpus);
+        GridGenerator.instanciasWumpus.Add(wumpusInstanciado);
+
+        // Remover fedor anterior nas adjacentes, para evitar bloqueio de efeito visual
+        GridGenerator.RemoverFedor(posicaoWumpus);
 
         // Usa o método correto para adicionar fedor com partículas
         GridGenerator.instancia.AdicionarFedorNasAdjacentes(posicaoWumpus);
@@ -158,4 +162,80 @@ public class AgenteManager : MonoBehaviour
             new Vector2Int(-1, 0)
         };
     }
+
+    public void SpawnarOuroAleatorio()
+    {
+        List<Vector2Int> tilesValidas = new List<Vector2Int>();
+
+        foreach (Vector2Int pos in TileManager.instancia.ObterTodasAsPosicoes())
+        {
+            var info = TileManager.instancia.ObterInfoDaTile(pos);
+
+            // Verifica se não há poço, ouro ou wumpus na posição
+            if (info != null && !info.temPoco && !info.temOuro && !GridGenerator.posicoesWumpus.Contains(pos))
+            {
+                tilesValidas.Add(pos);
+            }
+        }
+
+        if (tilesValidas.Count == 0)
+        {
+            Debug.LogWarning("Nenhuma tile válida para spawn do ouro.");
+            LogManager.instancia?.AdicionarLog("<color=yellow><b>Não há tiles disponíveis para gerar ouro!</b></color>");
+            return;
+        }
+
+        //Remover ouro anterior, se houver
+        if (GridGenerator.instanciaOuro != null)
+        {
+            Destroy(GridGenerator.instanciaOuro);
+
+            // Limpar tile anterior
+            TileManager.TileInfo infoAnterior = TileManager.instancia.ObterInfoDaTile(GridGenerator.posicaoOuro);
+            if (infoAnterior != null)
+            {
+                infoAnterior.temOuro = false;
+            }
+        }
+
+        Vector2Int posicaoOuro = tilesValidas[Random.Range(0, tilesValidas.Count)];
+        Vector3 posicaoMundo = new Vector3(posicaoOuro.x * 1.7f, 0.5f, posicaoOuro.y * 1.7f);
+
+        GameObject ouro = Instantiate(GridGenerator.instancia.ouroPrefab, posicaoMundo, Quaternion.identity);
+
+        if (GridGenerator.instancia.brilhoOuro != null)
+        {
+            Instantiate(GridGenerator.instancia.brilhoOuro, posicaoMundo + Vector3.up * 0.5f, Quaternion.identity, ouro.transform);
+        }
+
+        GridGenerator.posicaoOuro = posicaoOuro;
+        GridGenerator.instanciaOuro = ouro;
+        GridGenerator.ouroColetado = false;
+
+        TileManager.TileInfo infoNova = TileManager.instancia.ObterInfoDaTile(posicaoOuro);
+        if (infoNova != null)
+        {
+            infoNova.temOuro = true;
+        }
+
+        LogManager.instancia?.AdicionarLog($"<color=yellow><b>Ouro gerado na posição {posicaoOuro}!</b></color>");
+    }
+
+    public void AtivarWumpusComoIA()
+    {
+        GameObject wumpusObj = GameObject.FindGameObjectWithTag("wumpus");
+
+        if (wumpusObj != null && wumpusObj.GetComponent<WumpusInteligente>() == null)
+        {
+            wumpusObj.AddComponent<WumpusInteligente>();
+            LogManager.instancia?.AdicionarLog("<color=purple><b>Wumpus agora é inteligente e iniciou a caçada!</b></color>");
+        }
+        else
+        {
+            Debug.LogWarning("Wumpus já está ativo ou não encontrado.");
+        }
+    }
+
+
+
 }
