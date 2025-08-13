@@ -26,6 +26,7 @@ TagManager:
   - agente2
   - agente1
   - agente3
+  - escada
   layers:
   - Default
   - TransparentFX

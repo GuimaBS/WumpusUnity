@@ -1,22 +1,30 @@
 using System.Collections.Generic;
+using UnityEngine.UI;
 using UnityEngine;
 
 public class TowerGridGenerator : MonoBehaviour
 {
     public static TowerGridGenerator instancia;
+
+    // Eventos
     public static System.Action OnNovoAndar;
+    public static System.Action OnEscadaLiberada; // <- NOVO: avisa quando a escada foi criada
 
     [Header("Prefabs dos Personagens")]
     public GameObject prefabArqueiro;
     public GameObject prefabAmazona;
 
-    [Header("Offset Específico por Personagem")]
+    [Header("Offset Especï¿½fico por Personagem")]
     public Vector3 offsetArqueiro = Vector3.zero;
     public Vector3 offsetAmazona = Vector3.zero;
 
     [Header("Prefab da Escada")]
     public GameObject prefabEscada;
     public Vector3 offsetEscada = Vector3.zero;
+
+    [Header("Partï¿½cula - Escada liberada (opcional, nï¿½o usada)")]
+    public GameObject prefabParticulaEscada;
+    public Vector3 offsetParticulaEscada = new Vector3(0f, 1f, 0f);
 
     [Header("Prefabs das Salas")]
     public GameObject salaPrefab;
@@ -26,41 +34,58 @@ public class TowerGridGenerator : MonoBehaviour
     public GameObject prefabBloqueioSala;
 
     [Header("Offset dos Bloqueios")]
-    public Vector3 offsetBloqueioX = new Vector3(5f, 0f, 0f);  // Direita/esquerda
-    public Vector3 offsetBloqueioZ = new Vector3(0f, 0f, 5f);  // Cima/baixo
+    public Vector3 offsetBloqueioX = new Vector3(5f, 0f, 0f);
+    public Vector3 offsetBloqueioZ = new Vector3(0f, 0f, 5f);
 
     [Header("Prefabs do Wumpus e Ouro")]
     public GameObject prefabWumpus;
     public GameObject prefabOuro;
 
-    [Header("Prefabs de Sensações")]
+    [Header("Prefabs de Sensaï¿½ï¿½es")]
     public GameObject prefabBrisa;
     public GameObject prefabFedor;
     public GameObject prefabBrilho;
 
-    [Header("Espaçamento e Organização")]
+    [Header("Espaï¿½amento e Organizaï¿½ï¿½o")]
     public float espacoEntreSalas = 10f;
     public Transform paiDasSalas;
     public Transform paiDoPlayer;
 
-    [Header("Offsets e Rotação")]
+    [Header("Offsets e Rotaï¿½ï¿½o")]
     public Vector3 offsetCentroSala = new Vector3(5, 0, 5);
     public float rotacaoYWumpus = 0f;
     public float rotacaoYOuro = 0f;
 
+    [Header("Normalizaï¿½ï¿½o de Escala (Opcional)")]
+    public bool normalizarEscala = true;
+    public Vector3 tamanhoMundialWumpus = Vector3.one;
+    public Vector3 tamanhoMundialOuro = Vector3.one;
+    public Vector3 offsetLocalWumpus = Vector3.zero;
+    public float rotacaoExtraYWumpus = 0f;
+    public Vector3 offsetLocalOuro = Vector3.zero;
+    public float rotacaoExtraYOuro = 0f;
+    public bool logarEscalasNoSpawn = false;
+
     public Vector2Int posicaoWumpus;
     public Vector2Int posicaoOuro;
+    public Vector2Int posicaoEscada;
+
     public bool wumpusMorto = false;
     public bool ouroColetado = false;
+    public bool escadaInstanciada = false;
+
+    private Transform playerTr;                
+    private bool ultimoEstadoBotaoAvancar = false;
+
     public int andarAtual = 1;
 
     [Header("Mapa Gerado")]
     public Dictionary<Vector2Int, GameObject> mapaGerado = new Dictionary<Vector2Int, GameObject>();
 
-    [Header("Mapa Lógico")]
+    [Header("Mapa Lï¿½gico")]
     public Dictionary<Vector2Int, TileInfo> gridInfo = new Dictionary<Vector2Int, TileInfo>();
 
-    [Header("Sensações por Posição")]
+    [Header("Sensaï¿½ï¿½es por Posiï¿½ï¿½o")]
     public Dictionary<Vector2Int, List<string>> sensacoesPorPosicao = new Dictionary<Vector2Int, List<string>>();
 
     [System.Serializable]
@@ -70,7 +95,8 @@ public class TowerGridGenerator : MonoBehaviour
         public bool temBrisa = false;
         public bool temFedor = false;
         public bool temOuro = false;
-        public bool temWumpus;
+        public bool temWumpus = false;
+        public bool temEscada = false;
         public bool foiVisitada = false;
     }
 
@@ -84,11 +110,38 @@ public class TowerGridGenerator : MonoBehaviour
         GerarNovoAndar();
     }
 
+    private void Update()
+    {
+        // Se nÃ£o hÃ¡ escada ou player, garante botÃ£o oculto e sai
+        if (!escadaInstanciada || playerTr == null)
+        {
+            ToggleBotaoAvancar(false);
+            return;
+        }
+
+        // Estamos na sala da escada?
+        bool naEscada = WorldToGrid(playerTr.position) == posicaoEscada;
+
+        // Mostra/oculta o botÃ£o sÃ³ quando muda de estado (evita custos desnecessÃ¡rios)
+        ToggleBotaoAvancar(naEscada);
+    }
+
+    private void ToggleBotaoAvancar(bool mostrar)
+    {
+        if (mostrar == ultimoEstadoBotaoAvancar) return;
+        ultimoEstadoBotaoAvancar = mostrar;
+
+        // OPCIONAL: sÃ³ funciona se vocÃª tiver esse mÃ©todo no seu UIManager
+        TowerUIManager.instancia?.MostrarBotaoAvancar(mostrar);
+    }
+
+
+
     public void GerarNovoAndar()
     {
         tamanhoX = Random.Range(4, 11);
         tamanhoY = Random.Range(4, 11);
-        Debug.Log($"[TowerGrid] Gerando andar {andarAtual}: {tamanhoX}x{tamanhoY}");
+        Debug.Log("[TowerGrid] Gerando andar " + andarAtual + ": " + tamanhoX + "x" + tamanhoY);
 
         LimparMapa();
         GerarMapa();
@@ -96,9 +149,16 @@ public class TowerGridGenerator : MonoBehaviour
         AplicarBrisaNosPocos();
         InstanciarWumpus();
         InstanciarOuro();
-        SpawnarPlayer();
+        SpawnarOuReposicionarPlayer();
+
+        ouroColetado = false;
+        wumpusMorto = false;
+        escadaInstanciada = false;
 
         OnNovoAndar?.Invoke();
+
+        ultimoEstadoBotaoAvancar = false;
+        TowerUIManager.instancia?.MostrarBotaoAvancar(false);
     }
 
     private void GerarMapa()
@@ -108,7 +168,7 @@ public class TowerGridGenerator : MonoBehaviour
             for (int y = 0; y < tamanhoY; y++)
             {
                 Vector3 pos = new Vector3(x * espacoEntreSalas, 0, y * espacoEntreSalas);
-                Vector2Int gridPos = new(x, y);
+                Vector2Int gridPos = new Vector2Int(x, y);
 
                 bool temPoco = Random.value < 0.2f;
                 GameObject sala = Instantiate(
@@ -118,11 +178,11 @@ public class TowerGridGenerator : MonoBehaviour
                     paiDasSalas
                 );
 
-                sala.name = $"Sala ({x},{y})";
+                sala.name = "Sala (" + x + "," + y + ")";
                 if (x != 0 || y != 0)
                     sala.SetActive(false);
-                mapaGerado[gridPos] = sala;
 
+                mapaGerado[gridPos] = sala;
                 AdicionarBloqueios(gridPos, sala);
 
                 TileInfo info = new TileInfo { temPoco = temPoco };
@@ -165,67 +225,42 @@ public class TowerGridGenerator : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[TowerGrid] Sala (0,0) não existe no gridInfo.");
+            Debug.LogError("[TowerGrid] Sala (0,0) nï¿½o existe no gridInfo.");
         }
     }
 
     void AdicionarBloqueios(Vector2Int pos, GameObject sala)
     {
-        // Direções possíveis e seus respectivos offsets
-        Vector2Int[] direcoes = new Vector2Int[]
+        if (prefabBloqueioSala == null) return;
+
+        if (pos.x == 0)
         {
-        Vector2Int.up,     // Z+
-        Vector2Int.down,   // Z-
-        Vector2Int.right,  // X+
-        Vector2Int.left    // X-
-        };
+            Vector3 posBloqueio = sala.transform.position - offsetBloqueioX;
+            Quaternion rot = Quaternion.Euler(0, -90, 0);
+            Instantiate(prefabBloqueioSala, posBloqueio, rot, sala.transform);
+        }
 
-        foreach (var dir in direcoes)
+        if (pos.x == tamanhoX - 1)
         {
-            Vector2Int vizinha = pos + dir;
+            Vector3 posBloqueio = sala.transform.position + offsetBloqueioX;
+            Quaternion rot = Quaternion.Euler(0, 90, 0);
+            Instantiate(prefabBloqueioSala, posBloqueio, rot, sala.transform);
+        }
 
-            if (!gridInfo.ContainsKey(vizinha))
-            {
-                Vector3 offset = Vector3.zero;
-                Quaternion rotacao = Quaternion.identity;
+        if (pos.y == 0)
+        {
+            Vector3 posBloqueio = sala.transform.position - offsetBloqueioZ;
+            Quaternion rot = Quaternion.Euler(0, 180, 0);
+            Instantiate(prefabBloqueioSala, posBloqueio, rot, sala.transform);
+        }
 
-                // Define o offset e a rotação com base na direção
-                if (dir == Vector2Int.up)
-                {
-                    offset = offsetBloqueioZ;
-                }
-                else if (dir == Vector2Int.down)
-                {
-                    offset = -offsetBloqueioZ;
-                    rotacao = Quaternion.Euler(0, 180, 0);
-                }
-                else if (dir == Vector2Int.right)
-                {
-                    offset = offsetBloqueioX;
-                    rotacao = Quaternion.Euler(0, 90, 0);
-                }
-                else if (dir == Vector2Int.left)
-                {
-                    offset = -offsetBloqueioX;
-                    rotacao = Quaternion.Euler(0, -90, 0);
-                }
-
-                if (prefabBloqueioSala != null)
-                {
-                    GameObject bloqueio = Instantiate(
-                        prefabBloqueioSala,
-                        sala.transform.position + offset,
-                        rotacao,
-                        sala.transform
-                    );
-                }
-            }
+        if (pos.y == tamanhoY - 1)
+        {
+            Vector3 posBloqueio = sala.transform.position + offsetBloqueioZ;
+            Quaternion rot = Quaternion.Euler(0, 0, 0);
+            Instantiate(prefabBloqueioSala, posBloqueio, rot, sala.transform);
         }
     }
-
-
-
-
 
     private void AplicarBrisaNosPocos()
     {
@@ -262,6 +297,13 @@ public class TowerGridGenerator : MonoBehaviour
         wumpusGO.name = "Wumpus";
         wumpusGO.tag = "wumpus";
 
+        NormalizarWorldScale(wumpusGO.transform, tamanhoMundialWumpus);
+        wumpusGO.transform.localPosition += offsetLocalWumpus;
+        wumpusGO.transform.localRotation = Quaternion.Euler(0f, rotacaoExtraYWumpus, 0f) * wumpusGO.transform.localRotation;
+
+        if (logarEscalasNoSpawn)
+            Debug.Log("[TowerGrid] Wumpus lossy=" + wumpusGO.transform.lossyScale);
+
         gridInfo[posicaoWumpus].temWumpus = true;
 
         Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
@@ -277,12 +319,12 @@ public class TowerGridGenerator : MonoBehaviour
         }
     }
 
-
     public void EliminarWumpusNaPosicao(Vector2Int pos)
     {
         if (gridInfo.ContainsKey(pos) && gridInfo[pos].temWumpus)
         {
             gridInfo[pos].temWumpus = false;
+            wumpusMorto = true;
 
             if (mapaGerado.TryGetValue(pos, out GameObject sala))
             {
@@ -296,7 +338,6 @@ public class TowerGridGenerator : MonoBehaviour
                 }
             }
 
-            // Remover fedor das salas adjacentes
             Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
             foreach (var dir in dirs)
             {
@@ -307,18 +348,20 @@ public class TowerGridGenerator : MonoBehaviour
 
                     if (mapaGerado.TryGetValue(adj, out GameObject salaAdj))
                     {
+                        List<Transform> remover = new List<Transform>();
                         foreach (Transform child in salaAdj.transform)
                         {
                             if (child.name.Contains("Fedor"))
-                                Destroy(child.gameObject);
+                                remover.Add(child);
                         }
+                        foreach (var t in remover) Destroy(t.gameObject);
                     }
                 }
             }
+
+            TentarInstanciarEscadaSeElegivel();
         }
     }
-
-
 
     private void InstanciarOuro()
     {
@@ -330,30 +373,157 @@ public class TowerGridGenerator : MonoBehaviour
 
         Vector3 pos = mapaGerado[posicaoOuro].transform.position + Vector3.up * 0.5f;
         Quaternion rot = Quaternion.Euler(0f, rotacaoYOuro, 0f);
-        Instantiate(prefabOuro, pos, rot, mapaGerado[posicaoOuro].transform).tag = "ouro";
+
+        GameObject ouroGO = Instantiate(prefabOuro, pos, rot, mapaGerado[posicaoOuro].transform);
+        ouroGO.name = "ouro";
+        ouroGO.tag = "ouro";
+
+        NormalizarWorldScale(ouroGO.transform, tamanhoMundialOuro);
+        ouroGO.transform.localPosition += offsetLocalOuro;
+        ouroGO.transform.localRotation = Quaternion.Euler(0f, rotacaoExtraYOuro, 0f) * ouroGO.transform.localRotation;
+
+        if (logarEscalasNoSpawn)
+            Debug.Log("[TowerGrid] Ouro lossy=" + ouroGO.transform.lossyScale);
 
         Vector3 posBrilho = pos + Vector3.up * 0.5f;
-        Instantiate(prefabBrilho, posBrilho, Quaternion.identity, mapaGerado[posicaoOuro].transform);
+        GameObject brilhoGO = Instantiate(prefabBrilho, posBrilho, Quaternion.identity, mapaGerado[posicaoOuro].transform);
+        brilhoGO.name = "Brilho";
+
         gridInfo[posicaoOuro].temOuro = true;
     }
 
-    private void SpawnarPlayer()
+    public void RemoverOuroNaPosicao(Vector2Int pos)
     {
+        if (!gridInfo.ContainsKey(pos) || !gridInfo[pos].temOuro) return;
+
+        gridInfo[pos].temOuro = false;
+        ouroColetado = true;
+
+        if (mapaGerado.TryGetValue(pos, out GameObject sala))
+        {
+            Transform ouro = null;
+            Transform brilho = null;
+
+            foreach (Transform child in sala.transform)
+            {
+                if (child.CompareTag("ouro")) ouro = child;
+                else if (child.name == "Brilho" || child.name.Contains("Brilho")) brilho = child;
+            }
+
+            if (ouro) Destroy(ouro.gameObject);
+            if (brilho) Destroy(brilho.gameObject);
+        }
+
+        TentarInstanciarEscadaSeElegivel();
+    }
+
+    public void TentarInstanciarEscadaSeElegivel()
+    {
+        if (escadaInstanciada) return;
+        if (!ouroColetado || !wumpusMorto) return;
+
+        Vector2Int posEscolhida;
+        if (!EncontrarPosicaoEscada(out posEscolhida))
+        {
+            Debug.LogWarning("[TowerGrid] Nï¿½o foi possï¿½vel achar posiï¿½ï¿½o segura na ï¿½ltima fileira do eixo X para a escada.");
+            return;
+        }
+
+        posicaoEscada = posEscolhida;
+
+        if (mapaGerado.TryGetValue(posicaoEscada, out GameObject sala))
+        {
+            Vector3 pos = sala.transform.position + offsetEscada;
+            GameObject escada = Instantiate(prefabEscada, pos, Quaternion.identity, sala.transform);
+            escada.name = "Escada";
+            escada.tag = "escada";
+
+            gridInfo[posicaoEscada].temEscada = true;
+            escadaInstanciada = true;
+            OnEscadaLiberada?.Invoke();
+
+            Debug.Log("[TowerGrid] Escada instanciada em " + posicaoEscada);
+        }
+    }
+
+    bool EncontrarPosicaoEscada(out Vector2Int posOut)
+    {
+        int x = tamanhoX - 1; // ï¿½ltima fileira do eixo X
+        for (int y = 0; y < tamanhoY; y++)
+        {
+            Vector2Int p = new Vector2Int(x, y);
+            if (!gridInfo[p].temPoco)
+            {
+                posOut = p;
+                return true;
+            }
+        }
+        posOut = Vector2Int.zero;
+        return false;
+    }
+
+    private void SpawnarOuReposicionarPlayer()
+    {
+        // 1) Garantir que a sala (0,0)
+        if (!mapaGerado.TryGetValue(Vector2Int.zero, out GameObject sala00) || sala00 == null)
+        {
+            Debug.LogError("[TowerGrid] Sala (0,0) nï¿½o encontrada ao spawnar player.");
+            return;
+        }
+        if (!sala00.activeSelf) sala00.SetActive(true);
+
+        // 2) Base de spawn = centro fï¿½sico da sala (0,0)
+        Vector3 basePos = sala00.transform.position + offsetCentroSala;
+
+        // 3) Escolher prefab e offset
         string personagem = GameSessionManager.instancia.personagemEscolhido;
         GameObject prefab = personagem == "arqueiro" ? prefabArqueiro : prefabAmazona;
-        Vector3 offset = personagem == "arqueiro" ? offsetArqueiro : offsetAmazona;
+        Vector3 offsetPersonagem = personagem == "arqueiro" ? offsetArqueiro : offsetAmazona;
 
-        Vector3 pos = Vector3.zero + offsetCentroSala + CalcularOffsetDoPlayer(prefab) + offset;
-        GameObject player = Instantiate(prefab, pos, Quaternion.identity, paiDoPlayer);
+        // 4) Ver se existe player no pai dos players
+        Transform existente = (paiDoPlayer != null && paiDoPlayer.childCount > 0) ? paiDoPlayer.GetChild(0) : null;
 
-        CameraFollow cam = FindFirstObjectByType<CameraFollow>();
-        if (cam) cam.DefinirAlvo(player.transform.Find("CameraTarget") ?? player.transform);
-        GameManager.instancia?.DefinirPlayer(player);
+        if (existente != null)
+        {
+            // Reposiciona o mesmo player no centro da (0,0)
+            Vector3 pos = basePos + offsetPersonagem;
+            existente.SetPositionAndRotation(pos, Quaternion.identity);
+
+            playerTr = existente;
+
+            // Zera quaisquer velocidades residuais
+            if (existente.TryGetComponent<Rigidbody>(out var rb))
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
+            GameManager.instancia?.DefinirPlayer(existente.gameObject);
+
+            // Sinaliza para o movimento que chegamos num novo andar
+            var mover = existente.GetComponent<TowerPlayerMovement>();
+            if (mover != null) mover.OnChegouNovoAndar();
+        }
+        else
+        {
+            // Instancia um novo player ja no centro da (0,0)
+            Vector3 pos = basePos + offsetPersonagem;
+            GameObject player = Instantiate(prefab, pos, Quaternion.identity, paiDoPlayer);
+
+            playerTr = player.transform;
+
+            // Configura camera
+            CameraFollow cam = FindFirstObjectByType<CameraFollow>();
+            if (cam) cam.DefinirAlvo(player.transform.Find("CameraTarget") ?? player.transform);
+
+            GameManager.instancia?.DefinirPlayer(player);
+        }
     }
+
 
     private Vector3 CalcularOffsetDoPlayer(GameObject prefab)
     {
-        Collider col = prefab.GetComponentInChildren<Collider>();
+        Collider col = prefab != null ? prefab.GetComponentInChildren<Collider>() : null;
         if (col != null)
         {
             Bounds b = col.bounds;
@@ -367,13 +537,65 @@ public class TowerGridGenerator : MonoBehaviour
         andarAtual++;
         ouroColetado = false;
         wumpusMorto = false;
+        escadaInstanciada = false;
         GerarNovoAndar();
     }
 
+    private Vector2Int WorldToGrid(Vector3 worldPos)
+    {
+        Vector3 p = worldPos - offsetCentroSala;
+        int gx = Mathf.RoundToInt(p.x / espacoEntreSalas);
+        int gy = Mathf.RoundToInt(p.z / espacoEntreSalas);
+        return new Vector2Int(gx, gy);
+    }
+
+    public void OnClickAvancar()
+    {
+        if (!escadaInstanciada || playerTr == null) return;
+
+        // Sobe apenas se o player estiver dentro da sala da escada
+        if (WorldToGrid(playerTr.position) == posicaoEscada)
+        {
+            // Esconde o botÃ£o para evitar duplo clique
+            ToggleBotaoAvancar(false);
+
+            // Seu mÃ©todo jÃ¡ existente para trocar de andar
+            SubirParaProximoAndar();
+        }
+    }
+
+
+
     public void LimparMapa()
     {
-        foreach (Transform t in paiDasSalas) Destroy(t.gameObject);
+        if (paiDasSalas != null)
+        {
+            List<Transform> filhos = new List<Transform>();
+            foreach (Transform t in paiDasSalas) filhos.Add(t);
+            foreach (Transform t in filhos) Destroy(t.gameObject);
+        }
+
         mapaGerado.Clear();
         gridInfo.Clear();
+        posicaoEscada = Vector2Int.zero;
+        escadaInstanciada = false;
+    }
+
+    void NormalizarWorldScale(Transform t, Vector3 desiredWorld)
+    {
+        if (!normalizarEscala || t == null) return;
+
+        Vector3 parentLossy = Vector3.one;
+        if (t.parent != null) parentLossy = t.parent.lossyScale;
+
+        if (parentLossy.x == 0) parentLossy.x = 1;
+        if (parentLossy.y == 0) parentLossy.y = 1;
+        if (parentLossy.z == 0) parentLossy.z = 1;
+
+        t.localScale = new Vector3(
+            desiredWorld.x / parentLossy.x,
+            desiredWorld.y / parentLossy.y,
+            desiredWorld.z / parentLossy.z
+        );
     }
 }

@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3268022714806334875}
   m_Layer: 0
   m_Name: NGF_Env_Stairs_half_02
-  m_TagString: Untagged
+  m_TagString: escada
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

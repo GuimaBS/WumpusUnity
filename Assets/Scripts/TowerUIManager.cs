@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class TowerUIManager : MonoBehaviour
@@ -12,6 +13,9 @@ public class TowerUIManager : MonoBehaviour
     public TMP_Text textoVidas;
     public TMP_Text textoPontuacao;
 
+    [Header("Botões Torre")]
+    private Button botaoAvancar;
+
     private int pontuacao = 0;
 
     private void Awake()
@@ -20,6 +24,14 @@ public class TowerUIManager : MonoBehaviour
             instancia = this;
         else
             Destroy(gameObject);
+
+        instancia = this;
+
+        // Garante que começa oculto
+        if (botaoAvancar != null)
+            botaoAvancar.gameObject.SetActive(false);
+
+
     }
 
     private void Start()
@@ -66,6 +78,12 @@ public class TowerUIManager : MonoBehaviour
     public int ObterPontuacao()
     {
         return pontuacao;
+    }
+
+    public void MostrarBotaoAvancar(bool mostrar)
+    {
+        if (botaoAvancar != null)
+            botaoAvancar.gameObject.SetActive(mostrar);
     }
 
 }

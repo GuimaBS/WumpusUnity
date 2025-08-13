@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class TowerPlayerMovement : MonoBehaviour
 {
@@ -17,13 +19,36 @@ public class TowerPlayerMovement : MonoBehaviour
     public GameObject prefabParticulaErro;
     public Vector3 offsetParticulaRespawn = new Vector3(0, 1f, 0);
 
+    [Header("Partícula - Batida no limite (clássico)")]
+    public GameObject particulaBatidaLimite;
+    public Vector3 offsetparticulaBatidaLimite = Vector3.zero;
+
+    [Header("Partícula - Vitória (usada no Tower como 'escada liberada')")]
+    public GameObject prefabParticulaVitoria;
+    public Vector3 offsetParticulaVitoria = new Vector3(0, 1f, 0);
+
+    [Header("Respawn")]
+    public float alturaExtraRespawn = 0.2f;
+    public float offsetXRespawn = 0.2f;
+    public float offsetZRespawn = -0.35f;
+
+    [Header("Flecha")]
+    public GameObject prefabFlecha;
+    public Transform pontoDeDisparo;
+    public float delayDisparo = 0.25f;
+
+    [Header("Animação")]
+    public string idleStateName = "Idle";
+
     private bool isMoving = false;
     private bool isDying = false;
+    private bool gameOver = false;
 
     private Vector3 targetPosition;
     private Quaternion targetRotation;
 
     private TowerGridGenerator gridGen;
+    private Animator anim;
 
     private int flechas = 2;
     private int ouroColetado = 0;
@@ -32,9 +57,21 @@ public class TowerPlayerMovement : MonoBehaviour
 
     private Vector2Int ultimaSalaAtiva = new Vector2Int(-999, -999);
 
+    private void OnEnable()
+    {
+        TowerGridGenerator.OnEscadaLiberada += OnEscadaLiberadaHandler; 
+    }
+
+    private void OnDisable()
+    {
+        TowerGridGenerator.OnEscadaLiberada -= OnEscadaLiberadaHandler;
+    }
+
     private void Start()
     {
         gridGen = TowerGridGenerator.instancia;
+        anim = GetComponentInChildren<Animator>();
+
         targetPosition = transform.position;
         targetRotation = transform.rotation;
 
@@ -44,7 +81,7 @@ public class TowerPlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (isDying) return;
+        if (isDying || gameOver) return;
 
         transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
@@ -52,19 +89,21 @@ public class TowerPlayerMovement : MonoBehaviour
 
     public void RotateLeft()
     {
-        if (isMoving || isDying) return;
+        if (isMoving || isDying || gameOver) return;
         targetRotation *= Quaternion.Euler(0, -90, 0);
+        anim?.SetTrigger("girarEs");
     }
 
     public void RotateRight()
     {
-        if (isMoving || isDying) return;
+        if (isMoving || isDying || gameOver) return;
         targetRotation *= Quaternion.Euler(0, 90, 0);
+        anim?.SetTrigger("girarDir");
     }
 
     public void MoveForward()
     {
-        if (isMoving || isDying) return;
+        if (isMoving || isDying || gameOver) return;
 
         Vector3 dir = new Vector3(
             Mathf.Round(transform.forward.x),
@@ -76,11 +115,22 @@ public class TowerPlayerMovement : MonoBehaviour
 
         if (!SalaExisteNaDirecao(dir))
         {
+            // Igual ao clássico: instancia no pivot do player + offset
+            if (particulaBatidaLimite != null)
+                Instantiate(particulaBatidaLimite, transform.position + offsetparticulaBatidaLimite, Quaternion.identity);
+
             Debug.Log("Tentativa de sair do mapa bloqueada!");
             return;
         }
 
         StartCoroutine(MoveToPosition(destination));
+
+        anim?.SetTrigger("foward");
+
+        TimerPontuacaoController.passosDados++; //
+        TimerPontuacaoController.pontuacaoFinal -= 1; // Desconto de pontuação por passo
+        UIManager.instancia?.AlterarPontuacao(-1);
+
     }
 
     bool SalaExisteNaDirecao(Vector3 direcao)
@@ -117,10 +167,21 @@ public class TowerPlayerMovement : MonoBehaviour
         if (EstaEmSalaComPoco())
         {
             StartCoroutine(MorrerNoPoco());
+            yield break;
         }
-        else if (EstaEmSalaComWumpus())
+        if (EstaEmSalaComWumpus())
         {
             StartCoroutine(MorrerParaOWumpus());
+            yield break;
+        }
+
+        if (EstaEmSalaComEscada())
+        {
+            gridGen.SubirParaProximoAndar();
+            targetPosition = transform.position;
+            targetRotation = transform.rotation;
+            AtualizarSalaAtual();
+            AtualizarUI();
         }
     }
 
@@ -133,7 +194,22 @@ public class TowerPlayerMovement : MonoBehaviour
     bool EstaEmSalaComWumpus()
     {
         Vector2Int pos = PegarPosicaoGrid();
-        return gridGen.posicaoWumpus == pos;
+        return gridGen.gridInfo.ContainsKey(pos) && gridGen.gridInfo[pos].temWumpus;
+    }
+
+    bool EstaEmSalaComEscada()
+    {
+        Vector2Int pos = PegarPosicaoGrid();
+        if (gridGen.gridInfo.ContainsKey(pos) && gridGen.gridInfo[pos].temEscada) return true;
+
+        if (gridGen.mapaGerado.TryGetValue(pos, out GameObject sala))
+        {
+            foreach (Transform child in sala.transform)
+            {
+                if (child != null && child.CompareTag("escada")) return true;
+            }
+        }
+        return false;
     }
 
     IEnumerator MorrerNoPoco()
@@ -147,6 +223,12 @@ public class TowerPlayerMovement : MonoBehaviour
 
         AtualizarUI();
 
+        anim?.SetTrigger("queda");
+
+        if (vidas <= 0) { AbrirTelaDerrota(); yield break; }
+
+        UIManager.instancia?.AlterarPontuacao(-1000);
+        TimerPontuacaoController.pontuacaoFinal -= 1000;
         yield return new WaitForSeconds(1f);
         RespawnarPlayer();
     }
@@ -157,19 +239,46 @@ public class TowerPlayerMovement : MonoBehaviour
         isDying = true;
         vidas--;
 
+        DispararAnimacaoWumpusAtaqueNaSalaAtual();
+
+        anim?.SetTrigger("queda");
+
         if (prefabParticulaMorte != null)
             Instantiate(prefabParticulaMorte, transform.position + Vector3.up * 1f, Quaternion.identity);
 
         AtualizarUI();
 
+        if (vidas <= 0) { AbrirTelaDerrota(); yield break; }
+
+        UIManager.instancia?.AlterarPontuacao(-1000);
+        TimerPontuacaoController.pontuacaoFinal -= 1000;
         yield return new WaitForSeconds(1f);
         RespawnarPlayer();
     }
 
+    void DispararAnimacaoWumpusAtaqueNaSalaAtual()
+    {
+        Vector2Int pos = PegarPosicaoGrid();
+
+        if (gridGen.mapaGerado.TryGetValue(pos, out GameObject sala))
+        {
+            Animator wAnim = null;
+            foreach (Transform child in sala.transform)
+            {
+                if (child != null && child.CompareTag("wumpus"))
+                {
+                    wAnim = child.GetComponentInChildren<Animator>();
+                    break;
+                }
+            }
+
+            if (wAnim != null) wAnim.SetTrigger("wattack");
+        }
+    }
+
     void RespawnarPlayer()
     {
-        Vector3 posRespawn = Vector3.zero + gridGen.offsetCentroSala + new Vector3(0.2f, 0.2f, -0.35f);
-
+        Vector3 posRespawn = Vector3.zero + gridGen.offsetCentroSala + new Vector3(offsetXRespawn, alturaExtraRespawn, offsetZRespawn);
         transform.SetPositionAndRotation(posRespawn, Quaternion.identity);
         targetPosition = transform.position;
         targetRotation = transform.rotation;
@@ -177,31 +286,55 @@ public class TowerPlayerMovement : MonoBehaviour
         if (prefabParticulaRespawn != null)
             Instantiate(prefabParticulaRespawn, transform.position + offsetParticulaRespawn, Quaternion.identity);
 
+        ForcarIdle();
+
         AtualizarSalaAtual();
         AtualizarUI();
+
         isDying = false;
     }
+
+    void ForcarIdle()
+    {
+        if (anim == null) return;
+
+        anim.ResetTrigger("queda");
+        anim.ResetTrigger("foward");
+        anim.ResetTrigger("girarEs");
+        anim.ResetTrigger("girarDir");
+        anim.ResetTrigger("Atirar");
+        anim.ResetTrigger("Pick");
+
+        int hash = Animator.StringToHash(idleStateName);
+        if (anim.HasState(0, hash)) anim.CrossFade(hash, 0.05f, 0, 0f);
+        else { anim.Rebind(); anim.Update(0f); }
+    }
+
+    void AbrirTelaDerrota()
+    {
+        isDying = false;
+        gameOver = true;
+        ForcarIdle();
+
+        TowerGameOverPanel.instancia?.Show();
+    }
+
 
     void AtualizarSalaAtual()
     {
         Vector2Int pos = PegarPosicaoGrid();
 
-        // Desativar sala anterior
         if (gridGen.mapaGerado.TryGetValue(ultimaSalaAtiva, out GameObject salaAnterior) && salaAnterior.activeSelf)
             salaAnterior.SetActive(false);
 
-        // Ativar sala atual
         AtivarSala(pos);
         ultimaSalaAtiva = pos;
-
     }
 
     void AtivarSala(Vector2Int pos)
     {
         if (gridGen.mapaGerado.TryGetValue(pos, out GameObject sala) && !sala.activeSelf)
-        {
             sala.SetActive(true);
-        }
     }
 
     Vector2Int PegarPosicaoGrid()
@@ -216,24 +349,33 @@ public class TowerPlayerMovement : MonoBehaviour
     {
         TowerUIManager.instancia?.AtualizarFlechas(flechas);
         TowerUIManager.instancia?.AtualizarOuro(ouroColetado);
-        TowerUIManager.instancia.AtualizarDWumpus(wumpusMortos);
+        TowerUIManager.instancia?.AtualizarDWumpus(wumpusMortos);
         TowerUIManager.instancia?.AtualizarVidas(vidas);
     }
 
     public void ColetarOuro()
     {
+        if (gameOver) return;
+
         Vector2Int pos = PegarPosicaoGrid();
         if (!gridGen.gridInfo.ContainsKey(pos)) return;
 
         if (gridGen.gridInfo[pos].temOuro)
         {
             ouroColetado++;
-            gridGen.gridInfo[pos].temOuro = false;
-            Debug.Log("Ouro coletado!");
+            gridGen.RemoverOuroNaPosicao(pos);
+
+            anim?.SetTrigger("Pick");
 
             if (prefabParticulaColetaOuro != null)
                 Instantiate(prefabParticulaColetaOuro, transform.position + Vector3.up * 1f, Quaternion.identity);
 
+            gridGen.TentarInstanciarEscadaSeElegivel();
+
+            Debug.Log("Ouro coletado! Ouro visual removido da sala.");
+            flechas++;
+            UIManager.instancia?.AtualizarFlechas(flechas);
+            TimerPontuacaoController.pontuacaoFinal += 1000;
             AtualizarUI();
         }
         else
@@ -244,13 +386,22 @@ public class TowerPlayerMovement : MonoBehaviour
 
     public void AtirarFlecha()
     {
-        if (flechas <= 0)
-        {
-            Debug.Log("Sem flechas restantes!");
-            return;
-        }
+        if (flechas <= 0 || isDying || gameOver) return;
 
         flechas--;
+        AtualizarUI();
+
+        anim?.SetTrigger("Atirar");
+
+        StartCoroutine(DispararFlechaComDelay(delayDisparo));
+    }
+
+    IEnumerator DispararFlechaComDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (prefabFlecha != null && pontoDeDisparo != null)
+            Instantiate(prefabFlecha, pontoDeDisparo.position, Quaternion.LookRotation(transform.forward));
 
         Vector2Int posAtual = PegarPosicaoGrid();
         Vector2Int direcao = new Vector2Int(
@@ -258,24 +409,49 @@ public class TowerPlayerMovement : MonoBehaviour
             Mathf.RoundToInt(transform.forward.z)
         );
 
-        Vector2Int alvo = posAtual + direcao;
+        Vector2Int posAlvo = posAtual + direcao;
 
-        if (alvo == gridGen.posicaoWumpus)
+        if (posAlvo == gridGen.posicaoWumpus && gridGen.gridInfo.ContainsKey(posAlvo))
         {
-            Debug.Log("Wumpus atingido!");
-            gridGen.EliminarWumpusNaPosicao(alvo);
+            gridGen.EliminarWumpusNaPosicao(posAlvo);
             wumpusMortos++;
 
             if (prefabParticulaAcerto != null)
                 Instantiate(prefabParticulaAcerto, transform.position + Vector3.up * 1f, Quaternion.identity);
+
+            gridGen.TentarInstanciarEscadaSeElegivel();
+
+            PlayerGridGenerator.instancia?.RegistrarWumpusMorto();
+
+            TimerPontuacaoController.pontuacaoFinal += 1000;
+
+            Debug.Log("Você acertou o Wumpus!");
         }
         else
         {
-            Debug.Log("Flecha errada!");
             if (prefabParticulaErro != null)
                 Instantiate(prefabParticulaErro, transform.position + Vector3.up * 1f, Quaternion.identity);
+
+            Debug.Log("Você errou o tiro.");
         }
 
         AtualizarUI();
+    }
+
+    public void OnChegouNovoAndar()
+    {
+        isDying = false;
+        gameOver = false;
+        ForcarIdle();
+        targetPosition = transform.position;
+        targetRotation = transform.rotation;
+        AtualizarSalaAtual();
+        AtualizarUI();
+    }
+
+    private void OnEscadaLiberadaHandler()
+    {
+        if (prefabParticulaVitoria != null)
+            Instantiate(prefabParticulaVitoria, transform.position + offsetParticulaVitoria, Quaternion.identity);
     }
 }

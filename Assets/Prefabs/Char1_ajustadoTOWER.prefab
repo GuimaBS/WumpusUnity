@@ -200,14 +200,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveDistance: 10
-  moveSpeed: 20
-  rotationSpeed: 400
+  moveSpeed: 25
+  rotationSpeed: 500
   prefabParticulaMorte: {fileID: 3183625070554763850, guid: 898ec773dc679284cb0c14132c67ea0f, type: 3}
   prefabParticulaRespawn: {fileID: 6672371794521518739, guid: b69636e36d8166e4b8082d81d374910c, type: 3}
   prefabParticulaColetaOuro: {fileID: 2078536211965194912, guid: 9249d9e3bac7ac74eb27a2f88c452e6f, type: 3}
   prefabParticulaAcerto: {fileID: 904662820145583817, guid: 019faff12646bd8438ea56e8e7861fd8, type: 3}
   prefabParticulaErro: {fileID: 1122653929711819183, guid: df7a63820a20ea44c8adfc6314d7b5af, type: 3}
-  offsetParticulaRespawn: {x: 0, y: 1, z: 0}
+  offsetParticulaRespawn: {x: 0, y: 0, z: 0}
+  particulaBatidaLimite: {fileID: 6091632417345659815, guid: 9f54daa36d56be74a9acff0ce4739ea5, type: 3}
+  offsetparticulaBatidaLimite: {x: 0, y: 2.6, z: 0}
+  prefabParticulaVitoria: {fileID: 6645710287524494807, guid: e4d4f2446c49906479a46b8385288f68, type: 3}
+  offsetParticulaVitoria: {x: 0, y: 2, z: 0}
+  alturaExtraRespawn: 0
+  offsetXRespawn: 0.2
+  offsetZRespawn: -2.3
+  prefabFlecha: {fileID: 1164557728362429617, guid: 5d3b0b4fa8cca564387c877581ea3fe1, type: 3}
+  pontoDeDisparo: {fileID: 7143391003913650618}
+  delayDisparo: 0.25
+  idleStateName: Idle
 --- !u!1 &7033181068626679955
 GameObject:
   m_ObjectHideFlags: 0
