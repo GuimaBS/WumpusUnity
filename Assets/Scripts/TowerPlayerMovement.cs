@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 public class TowerPlayerMovement : MonoBehaviour
@@ -59,7 +58,7 @@ public class TowerPlayerMovement : MonoBehaviour
 
     private void OnEnable()
     {
-        TowerGridGenerator.OnEscadaLiberada += OnEscadaLiberadaHandler; 
+        TowerGridGenerator.OnEscadaLiberada += OnEscadaLiberadaHandler;
     }
 
     private void OnDisable()
@@ -76,7 +75,7 @@ public class TowerPlayerMovement : MonoBehaviour
         targetRotation = transform.rotation;
 
         AtualizarSalaAtual();
-        AtualizarUI();
+        AtualizarUI(); // inicializa contadores na UI
     }
 
     private void Update()
@@ -115,7 +114,6 @@ public class TowerPlayerMovement : MonoBehaviour
 
         if (!SalaExisteNaDirecao(dir))
         {
-            // Igual ao clássico: instancia no pivot do player + offset
             if (particulaBatidaLimite != null)
                 Instantiate(particulaBatidaLimite, transform.position + offsetparticulaBatidaLimite, Quaternion.identity);
 
@@ -123,14 +121,11 @@ public class TowerPlayerMovement : MonoBehaviour
             return;
         }
 
+        // custo por passo
+        TowerUIManager.instancia?.AlterarPontuacao(-1);
+
         StartCoroutine(MoveToPosition(destination));
-
         anim?.SetTrigger("foward");
-
-        TimerPontuacaoController.passosDados++; //
-        TimerPontuacaoController.pontuacaoFinal -= 1; // Desconto de pontuação por passo
-        UIManager.instancia?.AlterarPontuacao(-1);
-
     }
 
     bool SalaExisteNaDirecao(Vector3 direcao)
@@ -177,12 +172,9 @@ public class TowerPlayerMovement : MonoBehaviour
 
         if (EstaEmSalaComEscada())
         {
-            gridGen.SubirParaProximoAndar();
-            targetPosition = transform.position;
-            targetRotation = transform.rotation;
-            AtualizarSalaAtual();
-            AtualizarUI();
+            TowerUIManager.instancia?.MostrarBotaoAvancar(true);
         }
+
     }
 
     bool EstaEmSalaComPoco()
@@ -221,14 +213,21 @@ public class TowerPlayerMovement : MonoBehaviour
         if (prefabParticulaMorte != null)
             Instantiate(prefabParticulaMorte, transform.position + Vector3.up * 1f, Quaternion.identity);
 
+        // penalidade por morte
+        TowerUIManager.instancia?.AlterarPontuacao(-1000);
+
         AtualizarUI();
 
+        var cam = FindFirstObjectByType<CameraFollow>();
+        cam?.FocarNoPonto(CentroDaSalaAtual());
+
         anim?.SetTrigger("queda");
+        var queda = GetComponent<FallOnDeath>();
+        if (queda != null)
+            yield return StartCoroutine(queda.ExecutarQueda());
 
         if (vidas <= 0) { AbrirTelaDerrota(); yield break; }
 
-        UIManager.instancia?.AlterarPontuacao(-1000);
-        TimerPontuacaoController.pontuacaoFinal -= 1000;
         yield return new WaitForSeconds(1f);
         RespawnarPlayer();
     }
@@ -240,18 +239,18 @@ public class TowerPlayerMovement : MonoBehaviour
         vidas--;
 
         DispararAnimacaoWumpusAtaqueNaSalaAtual();
-
         anim?.SetTrigger("queda");
 
         if (prefabParticulaMorte != null)
             Instantiate(prefabParticulaMorte, transform.position + Vector3.up * 1f, Quaternion.identity);
 
+        // penalidade por morte
+        TowerUIManager.instancia?.AlterarPontuacao(-1000);
+
         AtualizarUI();
 
         if (vidas <= 0) { AbrirTelaDerrota(); yield break; }
 
-        UIManager.instancia?.AlterarPontuacao(-1000);
-        TimerPontuacaoController.pontuacaoFinal -= 1000;
         yield return new WaitForSeconds(1f);
         RespawnarPlayer();
     }
@@ -280,6 +279,12 @@ public class TowerPlayerMovement : MonoBehaviour
     {
         Vector3 posRespawn = Vector3.zero + gridGen.offsetCentroSala + new Vector3(offsetXRespawn, alturaExtraRespawn, offsetZRespawn);
         transform.SetPositionAndRotation(posRespawn, Quaternion.identity);
+
+        var cam = FindFirstObjectByType<CameraFollow>();
+        Transform camTarget = transform.Find("CameraTarget") ?? transform;
+        cam?.RetomarFollow(camTarget);
+        GetComponent<FallOnDeath>()?.ResetarYParaZero();
+
         targetPosition = transform.position;
         targetRotation = transform.rotation;
 
@@ -310,6 +315,17 @@ public class TowerPlayerMovement : MonoBehaviour
         else { anim.Rebind(); anim.Update(0f); }
     }
 
+    Vector3 CentroDaSalaAtual()
+    {
+        Vector2Int pos = PegarPosicaoGrid();
+        if (gridGen.mapaGerado.TryGetValue(pos, out GameObject sala))
+            return sala.transform.position + gridGen.offsetCentroSala;
+
+        // fallback caso não encontre no dicionário (não deve acontecer)
+        return new Vector3(pos.x * gridGen.espacoEntreSalas, 0f, pos.y * gridGen.espacoEntreSalas) + gridGen.offsetCentroSala;
+    }
+
+
     void AbrirTelaDerrota()
     {
         isDying = false;
@@ -318,7 +334,6 @@ public class TowerPlayerMovement : MonoBehaviour
 
         TowerGameOverPanel.instancia?.Show();
     }
-
 
     void AtualizarSalaAtual()
     {
@@ -351,6 +366,7 @@ public class TowerPlayerMovement : MonoBehaviour
         TowerUIManager.instancia?.AtualizarOuro(ouroColetado);
         TowerUIManager.instancia?.AtualizarDWumpus(wumpusMortos);
         TowerUIManager.instancia?.AtualizarVidas(vidas);
+        // Pontuação é atualizada pelo TowerUIManager internamente via AlterarPontuacao
     }
 
     public void ColetarOuro()
@@ -370,12 +386,17 @@ public class TowerPlayerMovement : MonoBehaviour
             if (prefabParticulaColetaOuro != null)
                 Instantiate(prefabParticulaColetaOuro, transform.position + Vector3.up * 1f, Quaternion.identity);
 
+            // recompensa por ouro
+            TowerUIManager.instancia?.AlterarPontuacao(+1000);
+
+            // bônus de flecha como você já fazia
+            flechas++;
+            TowerUIManager.instancia?.AtualizarFlechas(flechas);
+
             gridGen.TentarInstanciarEscadaSeElegivel();
 
             Debug.Log("Ouro coletado! Ouro visual removido da sala.");
-            flechas++;
-            UIManager.instancia?.AtualizarFlechas(flechas);
-            TimerPontuacaoController.pontuacaoFinal += 1000;
+
             AtualizarUI();
         }
         else
@@ -389,7 +410,7 @@ public class TowerPlayerMovement : MonoBehaviour
         if (flechas <= 0 || isDying || gameOver) return;
 
         flechas--;
-        AtualizarUI();
+        TowerUIManager.instancia?.AtualizarFlechas(flechas);
 
         anim?.SetTrigger("Atirar");
 
@@ -419,13 +440,14 @@ public class TowerPlayerMovement : MonoBehaviour
             if (prefabParticulaAcerto != null)
                 Instantiate(prefabParticulaAcerto, transform.position + Vector3.up * 1f, Quaternion.identity);
 
+            // recompensa por matar Wumpus
+            TowerUIManager.instancia?.AlterarPontuacao(+1000);
+
             gridGen.TentarInstanciarEscadaSeElegivel();
 
-            PlayerGridGenerator.instancia?.RegistrarWumpusMorto();
-
-            TimerPontuacaoController.pontuacaoFinal += 1000;
-
             Debug.Log("Você acertou o Wumpus!");
+
+            AtualizarUI();
         }
         else
         {
@@ -434,8 +456,6 @@ public class TowerPlayerMovement : MonoBehaviour
 
             Debug.Log("Você errou o tiro.");
         }
-
-        AtualizarUI();
     }
 
     public void OnChegouNovoAndar()

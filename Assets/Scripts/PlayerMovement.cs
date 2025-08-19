@@ -38,7 +38,6 @@ public class PlayerMovement : MonoBehaviour
     [Header("Offset da Partícula da barreira")]
     public Vector3 offsetparticulaBatidaLimite = Vector3.zero;
 
-
     [Header("Respawn")]
     public float alturaExtraRespawn = 0.2f;
     public float offsetXRespawn = 0f;
@@ -48,12 +47,24 @@ public class PlayerMovement : MonoBehaviour
     private Animator animator;
     private Collider playerCollider;
     private Renderer[] renderers;
-    private Transform salaFocus;
+    private Transform salaFocus; // mantido para utilidades internas (não é mais o alvo da câmera)
 
     private bool isMoving = false;
     private bool isDying = false;
     private bool vitoriaAlcancada = false;
     private Vector2Int posicaoAtual;
+    private bool fxMorteSpawned = false;
+
+    // dispara a FX imediatamente no frame da detecção
+    void SpawnMorteFX()
+    {
+        if (fxMorteSpawned) return;
+        fxMorteSpawned = true;
+
+        if (prefabParticulaMorte != null)
+            Instantiate(prefabParticulaMorte, transform.position + Vector3.up * 1f, Quaternion.identity);
+    }
+
 
     private Vector3 targetPosition;
     private Quaternion targetRotation;
@@ -87,16 +98,21 @@ public class PlayerMovement : MonoBehaviour
 
     void Start()
     {
+        // objeto utilitário (não é mais o target padrão da câmera)
         GameObject salaFocusObj = new GameObject("SalaFocus");
         salaFocus = salaFocusObj.transform;
+
         gridGen = PlayerGridGenerator.instancia;
 
+        // === CÂMERA: seguir SEMPRE o player (ou seu CameraTarget) ===
         CameraFollow cam = FindFirstObjectByType<CameraFollow>();
         if (cam != null)
         {
-            cam.DefinirAlvo(salaFocus);
-            cam.offset = new Vector3(0, 4, -7);
+            Transform follow = transform.Find("CameraTarget") ?? transform;
+            cam.DefinirAlvo(follow);
+            cam.offset = new Vector3(0, 3, -4);
         }
+        // ============================================================
 
         AtualizarSalaAtual();
 
@@ -161,11 +177,10 @@ public class PlayerMovement : MonoBehaviour
 
         animator?.SetTrigger("foward");
 
-        TimerPontuacaoController.passosDados++; //
-        TimerPontuacaoController.pontuacaoFinal -= 1; // Desconto de pontuação por passo
+        TimerPontuacaoController.passosDados++;
+        TimerPontuacaoController.pontuacaoFinal -= 1;
         UIManager.instancia?.AlterarPontuacao(-1);
     }
-
 
     bool SalaExisteNaDirecao(Vector3 direcao)
     {
@@ -207,8 +222,10 @@ public class PlayerMovement : MonoBehaviour
 
         if (EstaEmSalaComPoco())
         {
+            SpawnMorteFX();
             StartCoroutine(MorrerNoPoco());
         }
+
         else if (EstaEmSalaComWumpus())
         {
             StartCoroutine(MorrerParaOWumpus());
@@ -239,6 +256,22 @@ public class PlayerMovement : MonoBehaviour
         return pos == PlayerGridGenerator.instancia.posicaoWumpus;
     }
 
+    // ===== helper p/ focar no centro da sala atual =====
+    Vector3 CentroDaSalaAtual()
+    {
+        Vector2Int pos = new Vector2Int(
+            Mathf.RoundToInt(transform.position.x / moveDistance),
+            Mathf.RoundToInt(transform.position.z / moveDistance)
+        );
+
+        if (PlayerGridGenerator.instancia.mapaGerado.TryGetValue(pos, out GameObject sala))
+            return sala.transform.position + PlayerGridGenerator.instancia.offsetCentroSala;
+
+        // fallback matemático
+        return new Vector3(pos.x * PlayerGridGenerator.instancia.espacoEntreSalas, 0f, pos.y * PlayerGridGenerator.instancia.espacoEntreSalas)
+               + PlayerGridGenerator.instancia.offsetCentroSala;
+    }
+
     IEnumerator MorrerNoPoco()
     {
         Debug.Log("O jogador caiu no poço!");
@@ -247,11 +280,17 @@ public class PlayerMovement : MonoBehaviour
         mortes++;
         TimerPontuacaoController.mortes = mortes;
         AtualizarUI();
+ 
+        var cam = FindFirstObjectByType<CameraFollow>();
+        cam?.FocarNoPonto(CentroDaSalaAtual());
+      
+        if (!fxMorteSpawned) SpawnMorteFX();
 
         animator?.SetTrigger("queda");
+        var queda = GetComponent<FallOnDeath>();
+        if (queda != null)
+            yield return StartCoroutine(queda.ExecutarQueda());
 
-        if (prefabParticulaMorte != null)
-            Instantiate(prefabParticulaMorte, transform.position + Vector3.up * 1f, Quaternion.identity);
         UIManager.instancia?.AlterarPontuacao(-1000);
         TimerPontuacaoController.pontuacaoFinal -= 1000;
         yield return new WaitForSeconds(1f);
@@ -308,7 +347,6 @@ public class PlayerMovement : MonoBehaviour
         RespawnarPlayer();
     }
 
-
     void RespawnarPlayer()
     {
         if (RespawnPoint.instancia == null)
@@ -320,6 +358,9 @@ public class PlayerMovement : MonoBehaviour
         Vector3 posRespawn = RespawnPoint.instancia.transform.position + new Vector3(0.2f, alturaExtraRespawn, -0.35f);
 
         transform.SetPositionAndRotation(posRespawn, Quaternion.identity);
+
+        GetComponent<FallOnDeath>()?.ResetarYParaZero();
+
         targetPosition = transform.position;
         targetRotation = transform.rotation;
 
@@ -355,6 +396,12 @@ public class PlayerMovement : MonoBehaviour
         if (prefabParticulaRespawn != null)
             Instantiate(prefabParticulaRespawn, transform.position + offsetParticulaRespawn, Quaternion.identity);
 
+        // === CÂMERA: voltar a seguir o player ===
+        var cam = FindFirstObjectByType<CameraFollow>();
+        Transform follow = transform.Find("CameraTarget") ?? transform;
+        cam?.RetomarFollow(follow);
+        fxMorteSpawned = false;
+
         AtualizarSalaAtual();
         Debug.Log("Jogador respawnado corretamente na sala (0,0), câmera reposicionada.");
         ChecarCondicaoDeVitoria();
@@ -369,6 +416,7 @@ public class PlayerMovement : MonoBehaviour
             Mathf.RoundToInt(transform.position.z / PlayerGridGenerator.instancia.espacoEntreSalas)
         );
 
+        // Mantemos o SalaFocus atualizado (mesmo sem ser alvo da câmera)
         if (salaFocus != null)
         {
             Vector3 centroSala = new Vector3(pos.x, 0, pos.y) * PlayerGridGenerator.instancia.espacoEntreSalas;
@@ -387,7 +435,6 @@ public class PlayerMovement : MonoBehaviour
         AtualizarUI();
         animator?.SetTrigger("Atirar");
         StartCoroutine(DispararFlechaComDelay(0.3f));
-
     }
 
     IEnumerator DispararFlechaComDelay(float delay)
@@ -416,7 +463,7 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log($"[Debug Tiro] Posição do alvo: {posAlvo}, Wumpus está em: {PlayerGridGenerator.instancia.posicaoWumpus}");
 
         if (posAlvo == PlayerGridGenerator.instancia.posicaoWumpus &&
-    PlayerGridGenerator.instancia.gridInfo.ContainsKey(posAlvo))
+            PlayerGridGenerator.instancia.gridInfo.ContainsKey(posAlvo))
         {
             PlayerGridGenerator.instancia.EliminarWumpusNaPosicao(posAlvo);
 
@@ -432,10 +479,9 @@ public class PlayerMovement : MonoBehaviour
 
             TimerPontuacaoController.pontuacaoFinal += 1000;
 
-
             Debug.Log("Você acertou o Wumpus!");
 
-            //invalida a posição do Wumpus para impedir múltiplos acertos
+            // invalida a posição do Wumpus para impedir múltiplos acertos
             PlayerGridGenerator.instancia.posicaoWumpus = new Vector2Int(-1, -1);
         }
         else
@@ -448,7 +494,6 @@ public class PlayerMovement : MonoBehaviour
             LogManager.instancia?.AdicionarLog("Você errou o tiro...");
         }
     }
-
 
     public void ColetarOuro()
     {
@@ -550,40 +595,24 @@ public class PlayerMovement : MonoBehaviour
 
     void AtualizarMapaVisual()
     {
-        if (gridGen == null || MapaVisualPlayer.instancia == null)
-        {
-            Debug.LogError("gridGen ou MapaVisualPlayer está nulo!");
-            return;
-        }
+        if (gridGen == null || MapaVisualPlayer.instancia == null) return;
 
         Vector2Int pos = new Vector2Int(
             Mathf.RoundToInt(transform.position.x / moveDistance),
             Mathf.RoundToInt(transform.position.z / moveDistance)
         );
 
-        // Marca como visitada
-        if (gridGen.gridInfo.TryGetValue(pos, out PlayerGridGenerator.TileInfo info))
-        {
-            info.foiVisitada = true;
-
-            if (info.temWumpus)
-                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "wumpus" });
-            else if (info.temPoco)
-                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "poco" });
-            else if (info.temOuro)
-                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "brilho" });
-            else if (info.temFedor)
-                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "fedor" });
-            else if (info.temBrisa)
-                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "brisa" });
-            else
-                MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "vazio" });
-        }
+        List<string> sens;
+        if (gridGen.sensacoesPorPosicao.TryGetValue(pos, out var lista))
+            sens = new List<string>(lista); // cópia defensiva
         else
         {
-            MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string> { "desconhecido" });
+            sens = new List<string> { "desconhecido" };
         }
+
+        MapaVisualPlayer.instancia.AtualizarTile(pos, sens);
     }
+
 
     void RegistrarWumpusEPoco()
     {
@@ -595,23 +624,19 @@ public class PlayerMovement : MonoBehaviour
         if (!gridGen.gridInfo.TryGetValue(pos, out PlayerGridGenerator.TileInfo info))
             return;
 
-        // Cria ou recupera a lista de sensações já registradas no dicionário
         if (!gridGen.sensacoesPorPosicao.ContainsKey(pos))
             gridGen.sensacoesPorPosicao[pos] = new List<string>();
 
-        var sensacoes = gridGen.sensacoesPorPosicao[pos];
+        var sens = gridGen.sensacoesPorPosicao[pos];
+        sens.Clear(); // reconstruímos a lista desta célula conforme o estado atual
 
-        if (info.temWumpus && !sensacoes.Contains("wumpus"))
-            sensacoes.Add("wumpus");
+        if (info.temBrisa) sens.Add("brisa");
+        if (info.temFedor) sens.Add("fedor");
+        if (info.temOuro) sens.Add("brilho");
+        if (info.temWumpus) sens.Add("wumpus");
+        if (info.temPoco) sens.Add("poco");
 
-        if (info.temPoco && !sensacoes.Contains("poco"))
-            sensacoes.Add("poco");
-
-        if (sensacoes.Count == 0 && !sensacoes.Contains("vazio"))
-            sensacoes.Add("vazio");
-
-        // Atualiza a visualização da tile com as sensações registradas
-        MapaVisualPlayer.instancia.AtualizarTile(pos, new List<string>(sensacoes));
+        if (sens.Count == 0) sens.Add("vazio");
     }
 
 }

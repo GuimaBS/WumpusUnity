@@ -14,7 +14,7 @@ public class TowerUIManager : MonoBehaviour
     public TMP_Text textoPontuacao;
 
     [Header("Botões Torre")]
-    private Button botaoAvancar;
+    [SerializeField] private Button botaoAvancar;
 
     private int pontuacao = 0;
 

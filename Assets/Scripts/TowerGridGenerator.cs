@@ -8,13 +8,13 @@ public class TowerGridGenerator : MonoBehaviour
 
     // Eventos
     public static System.Action OnNovoAndar;
-    public static System.Action OnEscadaLiberada; // <- NOVO: avisa quando a escada foi criada
+    public static System.Action OnEscadaLiberada; // avisa quando a escada foi criada
 
     [Header("Prefabs dos Personagens")]
     public GameObject prefabArqueiro;
     public GameObject prefabAmazona;
 
-    [Header("Offset Espec�fico por Personagem")]
+    [Header("Offset Específico por Personagem")]
     public Vector3 offsetArqueiro = Vector3.zero;
     public Vector3 offsetAmazona = Vector3.zero;
 
@@ -22,7 +22,7 @@ public class TowerGridGenerator : MonoBehaviour
     public GameObject prefabEscada;
     public Vector3 offsetEscada = Vector3.zero;
 
-    [Header("Part�cula - Escada liberada (opcional, n�o usada)")]
+    [Header("Partícula - Escada liberada (opcional)")]
     public GameObject prefabParticulaEscada;
     public Vector3 offsetParticulaEscada = new Vector3(0f, 1f, 0f);
 
@@ -41,22 +41,22 @@ public class TowerGridGenerator : MonoBehaviour
     public GameObject prefabWumpus;
     public GameObject prefabOuro;
 
-    [Header("Prefabs de Sensa��es")]
+    [Header("Prefabs de Sensações")]
     public GameObject prefabBrisa;
     public GameObject prefabFedor;
     public GameObject prefabBrilho;
 
-    [Header("Espa�amento e Organiza��o")]
+    [Header("Espaçamento e Organização")]
     public float espacoEntreSalas = 10f;
     public Transform paiDasSalas;
     public Transform paiDoPlayer;
 
-    [Header("Offsets e Rota��o")]
+    [Header("Offsets e Rotação")]
     public Vector3 offsetCentroSala = new Vector3(5, 0, 5);
     public float rotacaoYWumpus = 0f;
     public float rotacaoYOuro = 0f;
 
-    [Header("Normaliza��o de Escala (Opcional)")]
+    [Header("Normalização de Escala (Opcional)")]
     public bool normalizarEscala = true;
     public Vector3 tamanhoMundialWumpus = Vector3.one;
     public Vector3 tamanhoMundialOuro = Vector3.one;
@@ -74,7 +74,7 @@ public class TowerGridGenerator : MonoBehaviour
     public bool ouroColetado = false;
     public bool escadaInstanciada = false;
 
-    private Transform playerTr;                
+    private Transform playerTr;
     private bool ultimoEstadoBotaoAvancar = false;
 
     public int andarAtual = 1;
@@ -82,10 +82,10 @@ public class TowerGridGenerator : MonoBehaviour
     [Header("Mapa Gerado")]
     public Dictionary<Vector2Int, GameObject> mapaGerado = new Dictionary<Vector2Int, GameObject>();
 
-    [Header("Mapa L�gico")]
+    [Header("Mapa Lógico")]
     public Dictionary<Vector2Int, TileInfo> gridInfo = new Dictionary<Vector2Int, TileInfo>();
 
-    [Header("Sensa��es por Posi��o")]
+    [Header("Sensações por Posição")]
     public Dictionary<Vector2Int, List<string>> sensacoesPorPosicao = new Dictionary<Vector2Int, List<string>>();
 
     [System.Serializable]
@@ -130,12 +130,8 @@ public class TowerGridGenerator : MonoBehaviour
     {
         if (mostrar == ultimoEstadoBotaoAvancar) return;
         ultimoEstadoBotaoAvancar = mostrar;
-
-        // OPCIONAL: só funciona se você tiver esse método no seu UIManager
         TowerUIManager.instancia?.MostrarBotaoAvancar(mostrar);
     }
-
-
 
     public void GerarNovoAndar()
     {
@@ -178,7 +174,7 @@ public class TowerGridGenerator : MonoBehaviour
                     paiDasSalas
                 );
 
-                sala.name = "Sala (" + x + "," + y + ")";
+                sala.name = $"Sala ({x},{y})";
                 if (x != 0 || y != 0)
                     sala.SetActive(false);
 
@@ -225,7 +221,7 @@ public class TowerGridGenerator : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[TowerGrid] Sala (0,0) n�o existe no gridInfo.");
+            Debug.LogError("[TowerGrid] Sala (0,0) não existe no gridInfo.");
         }
     }
 
@@ -423,9 +419,9 @@ public class TowerGridGenerator : MonoBehaviour
         if (!ouroColetado || !wumpusMorto) return;
 
         Vector2Int posEscolhida;
-        if (!EncontrarPosicaoEscada(out posEscolhida))
+        if (!EncontrarPosicaoEscada_BordaSuperior(out posEscolhida))
         {
-            Debug.LogWarning("[TowerGrid] N�o foi poss�vel achar posi��o segura na �ltima fileira do eixo X para a escada.");
+            Debug.LogWarning("[TowerGrid] Não foi possível achar posição segura na BORDA SUPERIOR para a escada.");
             return;
         }
 
@@ -440,39 +436,59 @@ public class TowerGridGenerator : MonoBehaviour
 
             gridInfo[posicaoEscada].temEscada = true;
             escadaInstanciada = true;
-            OnEscadaLiberada?.Invoke();
 
-            Debug.Log("[TowerGrid] Escada instanciada em " + posicaoEscada);
+            OnEscadaLiberada?.Invoke();
+            Debug.Log("[TowerGrid] Escada instanciada (borda superior) em " + posicaoEscada);
         }
     }
 
-    bool EncontrarPosicaoEscada(out Vector2Int posOut)
+    // ======= NOVO LOCAL: escolha da escada na borda superior =======
+    bool EncontrarPosicaoEscada_BordaSuperior(out Vector2Int posOut)
     {
-        int x = tamanhoX - 1; // �ltima fileira do eixo X
-        for (int y = 0; y < tamanhoY; y++)
+        int topY = tamanhoY - 1;
+
+        // Embaralha a ordem de x para dar variedade entre andares (Fisher–Yates)
+        List<int> xs = new List<int>();
+        for (int x = 0; x < tamanhoX; x++) xs.Add(x);
+        for (int i = xs.Count - 1; i > 0; i--)
         {
-            Vector2Int p = new Vector2Int(x, y);
-            if (!gridInfo[p].temPoco)
+            int j = Random.Range(0, i + 1);
+            int tmp = xs[i];
+            xs[i] = xs[j];
+            xs[j] = tmp;
+        }
+
+        foreach (int x in xs)
+        {
+            Vector2Int p = new Vector2Int(x, topY);
+            if (!gridInfo.ContainsKey(p)) continue;
+
+            var t = gridInfo[p];
+
+            // Só pode onde NÃO há poço, ouro ou wumpus (nem escada)
+            if (!t.temPoco && !t.temOuro && !t.temWumpus && !t.temEscada)
             {
                 posOut = p;
                 return true;
             }
         }
+
         posOut = Vector2Int.zero;
         return false;
     }
+    // ===============================================================
 
     private void SpawnarOuReposicionarPlayer()
     {
         // 1) Garantir que a sala (0,0)
         if (!mapaGerado.TryGetValue(Vector2Int.zero, out GameObject sala00) || sala00 == null)
         {
-            Debug.LogError("[TowerGrid] Sala (0,0) n�o encontrada ao spawnar player.");
+            Debug.LogError("[TowerGrid] Sala (0,0) não encontrada ao spawnar player.");
             return;
         }
         if (!sala00.activeSelf) sala00.SetActive(true);
 
-        // 2) Base de spawn = centro f�sico da sala (0,0)
+        // 2) Base de spawn = centro físico da sala (0,0)
         Vector3 basePos = sala00.transform.position + offsetCentroSala;
 
         // 3) Escolher prefab e offset
@@ -491,7 +507,7 @@ public class TowerGridGenerator : MonoBehaviour
 
             playerTr = existente;
 
-            // Zera quaisquer velocidades residuais
+            // Zera quaisquer velocidades residuais (mantém seu padrão)
             if (existente.TryGetComponent<Rigidbody>(out var rb))
             {
                 rb.linearVelocity = Vector3.zero;
@@ -506,7 +522,7 @@ public class TowerGridGenerator : MonoBehaviour
         }
         else
         {
-            // Instancia um novo player ja no centro da (0,0)
+            // Instancia um novo player já no centro da (0,0)
             Vector3 pos = basePos + offsetPersonagem;
             GameObject player = Instantiate(prefab, pos, Quaternion.identity, paiDoPlayer);
 
@@ -519,7 +535,6 @@ public class TowerGridGenerator : MonoBehaviour
             GameManager.instancia?.DefinirPlayer(player);
         }
     }
-
 
     private Vector3 CalcularOffsetDoPlayer(GameObject prefab)
     {
@@ -559,12 +574,10 @@ public class TowerGridGenerator : MonoBehaviour
             // Esconde o botão para evitar duplo clique
             ToggleBotaoAvancar(false);
 
-            // Seu método já existente para trocar de andar
+            // Troca de andar
             SubirParaProximoAndar();
         }
     }
-
-
 
     public void LimparMapa()
     {
