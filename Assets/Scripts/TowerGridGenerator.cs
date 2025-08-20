@@ -145,11 +145,14 @@ public class TowerGridGenerator : MonoBehaviour
         AplicarBrisaNosPocos();
         InstanciarWumpus();
         InstanciarOuro();
-        SpawnarOuReposicionarPlayer();
-
+        
         ouroColetado = false;
         wumpusMorto = false;
         escadaInstanciada = false;
+
+        MapaVisualTower.instancia?.InicializarMapa(tamanhoX, tamanhoY);
+
+        SpawnarOuReposicionarPlayer();
 
         OnNovoAndar?.Invoke();
 
@@ -533,6 +536,9 @@ public class TowerGridGenerator : MonoBehaviour
             if (cam) cam.DefinirAlvo(player.transform.Find("CameraTarget") ?? player.transform);
 
             GameManager.instancia?.DefinirPlayer(player);
+
+            var mover = player.GetComponent<TowerPlayerMovement>();
+            if (mover != null) mover.OnChegouNovoAndar();
         }
     }
 
@@ -610,5 +616,56 @@ public class TowerGridGenerator : MonoBehaviour
             desiredWorld.y / parentLossy.y,
             desiredWorld.z / parentLossy.z
         );
+    }
+
+    private static readonly Vector2Int[] VIZ = new Vector2Int[]
+{
+    new Vector2Int( 1, 0),
+    new Vector2Int(-1, 0),
+    new Vector2Int( 0, 1),
+    new Vector2Int( 0,-1),
+};
+
+    public List<string> ObterSensacoes(Vector2Int pos)
+    {
+        var s = new List<string>();
+        if (!gridInfo.ContainsKey(pos)) return s;
+
+        var info = gridInfo[pos];
+
+        // Wumpus/Poço/Brilho (na própria sala)
+        if (info.temWumpus) s.Add("wumpus");
+        if (info.temPoco)   s.Add("poco");
+
+        // brilho: quando há ouro na própria sala
+        if (info.temOuro)
+        s.Add("brilho");
+
+
+        // Fedor / Brisa:
+        bool fedor = info.temFedor;
+        bool brisa = info.temBrisa;
+
+        // Se não houver flags prontos, calcula por adjacência:
+        if (!info.temFedor && !info.temBrisa)
+        {
+            foreach (var dv in VIZ)
+            {
+                var viz = pos + dv;
+                if (gridInfo.TryGetValue(viz, out var iv))
+                {
+                    if (iv.temWumpus) fedor = true;
+                    if (iv.temPoco)   brisa = true;
+                }
+            }
+        }
+
+        if (fedor) s.Add("fedor");
+        if (brisa) s.Add("brisa");
+        if (info.temEscada) s.Add("escada");
+
+        // Se nada detectado além de "desconhecido", marcamos vazio
+        if (s.Count == 0) s.Add("vazio");
+        return s;
     }
 }

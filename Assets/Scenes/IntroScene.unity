@@ -350,7 +350,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Player Mode
+  m_Text: Modo Player
 --- !u!222 &185440903
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1168,7 +1168,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: AI Mode
+  m_Text: Modo IA
 --- !u!222 &902114310
 CanvasRenderer:
   m_ObjectHideFlags: 0

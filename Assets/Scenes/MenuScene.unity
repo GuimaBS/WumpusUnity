@@ -3257,7 +3257,6 @@ MonoBehaviour:
   inputX: {fileID: 2042954153}
   inputY: {fileID: 1614011594}
   warningPanel: {fileID: 598066756}
-  levelLoader: {fileID: 0}
 --- !u!4 &1741676176
 Transform:
   m_ObjectHideFlags: 0

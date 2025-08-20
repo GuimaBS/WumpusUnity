@@ -75,6 +75,7 @@ public class TowerPlayerMovement : MonoBehaviour
         targetRotation = transform.rotation;
 
         AtualizarSalaAtual();
+        AtualizarMapaVisualDaSalaAtual();
         AtualizarUI(); // inicializa contadores na UI
     }
 
@@ -158,6 +159,7 @@ public class TowerPlayerMovement : MonoBehaviour
         isMoving = false;
 
         AtualizarSalaAtual();
+        AtualizarMapaVisualDaSalaAtual();
 
         if (EstaEmSalaComPoco())
         {
@@ -294,6 +296,7 @@ public class TowerPlayerMovement : MonoBehaviour
         ForcarIdle();
 
         AtualizarSalaAtual();
+        AtualizarMapaVisualDaSalaAtual();
         AtualizarUI();
 
         isDying = false;
@@ -458,6 +461,15 @@ public class TowerPlayerMovement : MonoBehaviour
         }
     }
 
+    private void AtualizarMapaVisualDaSalaAtual()
+{
+    if (gridGen == null) return;
+
+    Vector2Int pos = PegarPosicaoGrid();
+    var sensacoes = gridGen.ObterSensacoes(pos);
+    MapaVisualTower.instancia?.AtualizarTile(pos, sensacoes);
+}
+
     public void OnChegouNovoAndar()
     {
         isDying = false;
@@ -466,6 +478,7 @@ public class TowerPlayerMovement : MonoBehaviour
         targetPosition = transform.position;
         targetRotation = transform.rotation;
         AtualizarSalaAtual();
+        AtualizarMapaVisualDaSalaAtual();
         AtualizarUI();
     }
 
