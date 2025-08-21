@@ -108,6 +108,7 @@ public class TowerGridGenerator : MonoBehaviour
         else { Destroy(gameObject); return; }
 
         GerarNovoAndar();
+        TowerUIManager.instancia?.AtualizarAndar(andarAtual);
     }
 
     private void Update()
@@ -513,7 +514,7 @@ public class TowerGridGenerator : MonoBehaviour
             // Zera quaisquer velocidades residuais (mantém seu padrão)
             if (existente.TryGetComponent<Rigidbody>(out var rb))
             {
-                rb.linearVelocity = Vector3.zero;
+                rb.linearVelocity = Vector3.zero; 
                 rb.angularVelocity = Vector3.zero;
             }
 
@@ -560,6 +561,8 @@ public class TowerGridGenerator : MonoBehaviour
         wumpusMorto = false;
         escadaInstanciada = false;
         GerarNovoAndar();
+
+        TowerUIManager.instancia?.AtualizarAndarAnimado(andarAtual);
     }
 
     private Vector2Int WorldToGrid(Vector3 worldPos)

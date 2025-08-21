@@ -9,4 +9,11 @@ public class GameFlowManager : MonoBehaviour
         TimerPontuacaoController.ResetarContadores();
         SceneManager.LoadScene("CharSelect");
     }
+
+    public void VoltarParaCharSelectTower()
+    {
+        TowerRankingController.SalvarDados();  
+        TowerStatsController.ResetarTodos();    
+        SceneManager.LoadScene("CharSelect");
+    }
 }

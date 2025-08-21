@@ -125,6 +125,9 @@ public class TowerPlayerMovement : MonoBehaviour
         // custo por passo
         TowerUIManager.instancia?.AlterarPontuacao(-1);
 
+        if (TowerUIManager.instancia != null)
+        TowerStatsController.SetPontuacao(TowerUIManager.instancia.ObterPontuacao());
+
         StartCoroutine(MoveToPosition(destination));
         anim?.SetTrigger("foward");
     }
@@ -157,6 +160,8 @@ public class TowerPlayerMovement : MonoBehaviour
 
         transform.position = destination;
         isMoving = false;
+
+        TowerStatsController.AddPasso();
 
         AtualizarSalaAtual();
         AtualizarMapaVisualDaSalaAtual();
@@ -390,9 +395,12 @@ public class TowerPlayerMovement : MonoBehaviour
                 Instantiate(prefabParticulaColetaOuro, transform.position + Vector3.up * 1f, Quaternion.identity);
 
             // recompensa por ouro
-            TowerUIManager.instancia?.AlterarPontuacao(+1000);
+            TowerStatsController.AddOuro();
 
-            // bônus de flecha como você já fazia
+            TowerUIManager.instancia?.AlterarPontuacao(+1000);
+            if (TowerUIManager.instancia != null)
+            TowerStatsController.SetPontuacao(TowerUIManager.instancia.ObterPontuacao());
+
             flechas++;
             TowerUIManager.instancia?.AtualizarFlechas(flechas);
 
@@ -443,8 +451,13 @@ public class TowerPlayerMovement : MonoBehaviour
             if (prefabParticulaAcerto != null)
                 Instantiate(prefabParticulaAcerto, transform.position + Vector3.up * 1f, Quaternion.identity);
 
+
+                TowerStatsController.AddWumpus();
             // recompensa por matar Wumpus
             TowerUIManager.instancia?.AlterarPontuacao(+1000);
+
+            if (TowerUIManager.instancia != null)
+            TowerStatsController.SetPontuacao(TowerUIManager.instancia.ObterPontuacao());
 
             gridGen.TentarInstanciarEscadaSeElegivel();
 
