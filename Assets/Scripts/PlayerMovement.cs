@@ -248,15 +248,11 @@ public class PlayerMovement : MonoBehaviour
 
     bool EstaEmSalaComWumpus()
     {
-        Vector2Int pos = new Vector2Int(
-            Mathf.RoundToInt(transform.position.x / moveDistance),
-            Mathf.RoundToInt(transform.position.z / moveDistance)
-        );
-
-        return pos == PlayerGridGenerator.instancia.posicaoWumpus;
+        var pos = PlayerGridGenerator.instancia.ConverterPosicaoMundoParaGrid(transform.position);
+        return PlayerGridGenerator.instancia.gridInfo.ContainsKey(pos) &&
+               PlayerGridGenerator.instancia.gridInfo[pos].temWumpus;
     }
 
-    // ===== helper p/ focar no centro da sala atual =====
     Vector3 CentroDaSalaAtual()
     {
         Vector2Int pos = new Vector2Int(
@@ -444,45 +440,41 @@ public class PlayerMovement : MonoBehaviour
         if (prefabFlecha != null && pontoDeDisparo != null)
             Instantiate(prefabFlecha, pontoDeDisparo.position, Quaternion.LookRotation(transform.forward));
 
-        Vector3 direcao = new Vector3(
+        Vector2Int dir = new Vector2Int(
             Mathf.RoundToInt(transform.forward.x),
-            0,
             Mathf.RoundToInt(transform.forward.z)
         );
 
-        Vector2Int posAtual = new Vector2Int(
-            Mathf.RoundToInt(transform.position.x / moveDistance),
-            Mathf.RoundToInt(transform.position.z / moveDistance)
-        );
+ 
+        Vector2Int posAtual = PlayerGridGenerator.instancia.ConverterPosicaoMundoParaGrid(transform.position);
+        Vector2Int posAlvo = posAtual + dir;
 
-        Vector2Int posAlvo = posAtual + new Vector2Int(
-            Mathf.RoundToInt(direcao.x),
-            Mathf.RoundToInt(direcao.z)
-        );
+        bool alvoValido = PlayerGridGenerator.instancia.gridInfo.ContainsKey(posAlvo) &&
+                          PlayerGridGenerator.instancia.gridInfo[posAlvo].temWumpus;
+        Debug.Log($"[Debug Tiro] Posição do alvo: {posAlvo}. Tem Wumpus aqui? {alvoValido}");
 
-        Debug.Log($"[Debug Tiro] Posição do alvo: {posAlvo}, Wumpus está em: {PlayerGridGenerator.instancia.posicaoWumpus}");
-
-        if (posAlvo == PlayerGridGenerator.instancia.posicaoWumpus &&
-            PlayerGridGenerator.instancia.gridInfo.ContainsKey(posAlvo))
+        if (alvoValido)
         {
             PlayerGridGenerator.instancia.EliminarWumpusNaPosicao(posAlvo);
 
             if (particulaAcertoWumpus != null)
                 Instantiate(particulaAcertoWumpus, transform.position + Vector3.up * 2f, Quaternion.identity);
+
+            // Atualiza placar do player (UI local)
             dwumpus++;
             UIManager.instancia?.AlterarPontuacao(1000);
-            ChecarCondicaoDeVitoria();
+            TimerPontuacaoController.pontuacaoFinal += 1000;
+
+            // Se quiser registrar o tempo do 1º abate:
+            // if (TimerPontuacaoController.tempoMatarWumpus < 0)
+            //     TimerPontuacaoController.tempoMatarWumpus = Time.time;
 
             AtualizarUI();
             UIManager.instancia?.AtualizarDWumpus(dwumpus);
-            PlayerGridGenerator.instancia?.RegistrarWumpusMorto();
 
-            TimerPontuacaoController.pontuacaoFinal += 1000;
-
+            // NÃO chame RegistrarWumpusMorto() aqui, pois EliminarWumpusNaPosicao já trata o estado global.
+            ChecarCondicaoDeVitoria();
             Debug.Log("Você acertou o Wumpus!");
-
-            // invalida a posição do Wumpus para impedir múltiplos acertos
-            PlayerGridGenerator.instancia.posicaoWumpus = new Vector2Int(-1, -1);
         }
         else
         {
@@ -495,48 +487,34 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+
     public void ColetarOuro()
     {
         if (isDying) return;
 
         animator?.SetTrigger("Pick");
 
-        Vector2Int posAtual = new Vector2Int(
-            Mathf.RoundToInt(transform.position.x / moveDistance),
-            Mathf.RoundToInt(transform.position.z / moveDistance)
-        );
+        var grid = PlayerGridGenerator.instancia.ConverterPosicaoMundoParaGrid(transform.position);
 
-        if (PlayerGridGenerator.instancia.gridInfo.ContainsKey(posAtual))
+        if (PlayerGridGenerator.instancia.gridInfo.ContainsKey(grid) &&
+            PlayerGridGenerator.instancia.gridInfo[grid].temOuro)
         {
-            var info = PlayerGridGenerator.instancia.gridInfo[posAtual];
+            // inventário e pontuação do player
+            ouro++;
+            UIManager.instancia?.AlterarPontuacao(1000);
+            TimerPontuacaoController.pontuacaoFinal += 1000;
 
-            if (info.temOuro)
-            {
-                ouro++;
-                UIManager.instancia?.AlterarPontuacao(1000);
+            // efeito de coleta
+            if (prefabParticulaColetar != null)
+                Instantiate(prefabParticulaColetar, transform.position + Vector3.up * 1f, Quaternion.identity);
 
-                GameObject sala = PlayerGridGenerator.instancia.mapaGerado[posAtual];
+            //deixa o Grid se virar e destruir objeto, tirar "brilho" e atualizar contadores globais
+            PlayerGridGenerator.instancia.ColetarOuroNaPosicao(grid);
 
-                Transform ouroObj = sala.transform.Find("ouro");
-                if (ouroObj != null) Destroy(ouroObj.gameObject);
-
-                Transform brilhoObj = sala.transform.Find("Brilho");
-                if (brilhoObj != null) Destroy(brilhoObj.gameObject);
-
-                if (prefabParticulaColetar != null)
-                {
-                    Vector3 posParticula = transform.position + Vector3.up * 1f;
-                    Instantiate(prefabParticulaColetar, posParticula, Quaternion.identity);
-                }
-
-                AtualizarUI();
-                Debug.Log("Ouro coletado!");
-                PlayerGridGenerator.instancia?.RegistrarOuroColetado();
-
-                TimerPontuacaoController.pontuacaoFinal += 1000;
-                ChecarCondicaoDeVitoria();
-                return;
-            }
+            AtualizarUI();
+            AtualizarMapaVisual();     // opcional, para refletir a remoção do "brilho" imediatamente
+            ChecarCondicaoDeVitoria();
+            return;
         }
 
         Debug.Log("Nenhum ouro nesta sala.");
@@ -557,22 +535,18 @@ public class PlayerMovement : MonoBehaviour
     {
         if (vitoriaAlcancada) return;
 
-        bool ouroColetado = ouro > 0;
-        bool wumpusMorto = dwumpus > 0;
+        bool ouroOK = PlayerGridGenerator.instancia.ouroColetado;  // todos os ouros coletados?
+        bool wumpusOK = PlayerGridGenerator.instancia.wumpusMorto;   // todos os wumpus mortos?
 
-        Vector2Int pos = PlayerGridGenerator.instancia.ConverterPosicaoMundoParaGrid(transform.position);
+        var pos = PlayerGridGenerator.instancia.ConverterPosicaoMundoParaGrid(transform.position);
         bool estaNaSalaInicial = pos == new Vector2Int(0, 0);
 
-        Debug.Log($"[CHECAGEM VITÓRIA] ouro: {ouroColetado}, wumpus: {wumpusMorto}, pos: {pos}");
+        Debug.Log($"[CHECAGEM VITÓRIA] ouroOK={ouroOK}, wumpusOK={wumpusOK}, pos={pos}");
 
-        if (ouroColetado && wumpusMorto && estaNaSalaInicial)
-        {
+        if (ouroOK && wumpusOK && estaNaSalaInicial)
             AplicarVitoria();
-        }
-        else if (ouroColetado && wumpusMorto && !estaNaSalaInicial)
-        {
-            Debug.Log("[VITÓRIA] Ouro e Wumpus obtidos. Retorne à sala inicial para vencer.");
-        }
+        else if (ouroOK && wumpusOK)
+            Debug.Log("[VITÓRIA] Objetivos completos. Volte à sala inicial para vencer.");
     }
 
     private void AplicarVitoria()

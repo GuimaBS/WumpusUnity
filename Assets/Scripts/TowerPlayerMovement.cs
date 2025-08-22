@@ -404,8 +404,6 @@ public class TowerPlayerMovement : MonoBehaviour
             flechas++;
             TowerUIManager.instancia?.AtualizarFlechas(flechas);
 
-            gridGen.TentarInstanciarEscadaSeElegivel();
-
             Debug.Log("Ouro coletado! Ouro visual removido da sala.");
 
             AtualizarUI();
@@ -440,10 +438,12 @@ public class TowerPlayerMovement : MonoBehaviour
             Mathf.RoundToInt(transform.forward.x),
             Mathf.RoundToInt(transform.forward.z)
         );
-
         Vector2Int posAlvo = posAtual + direcao;
 
-        if (posAlvo == gridGen.posicaoWumpus && gridGen.gridInfo.ContainsKey(posAlvo))
+        bool alvoValido = gridGen.gridInfo.ContainsKey(posAlvo) &&
+                          gridGen.gridInfo[posAlvo].temWumpus;
+
+        if (alvoValido)
         {
             gridGen.EliminarWumpusNaPosicao(posAlvo);
             wumpusMortos++;
@@ -451,18 +451,12 @@ public class TowerPlayerMovement : MonoBehaviour
             if (prefabParticulaAcerto != null)
                 Instantiate(prefabParticulaAcerto, transform.position + Vector3.up * 1f, Quaternion.identity);
 
-
-                TowerStatsController.AddWumpus();
-            // recompensa por matar Wumpus
+            TowerStatsController.AddWumpus();
             TowerUIManager.instancia?.AlterarPontuacao(+1000);
-
             if (TowerUIManager.instancia != null)
-            TowerStatsController.SetPontuacao(TowerUIManager.instancia.ObterPontuacao());
-
-            gridGen.TentarInstanciarEscadaSeElegivel();
+                TowerStatsController.SetPontuacao(TowerUIManager.instancia.ObterPontuacao());
 
             Debug.Log("Você acertou o Wumpus!");
-
             AtualizarUI();
         }
         else
@@ -473,6 +467,7 @@ public class TowerPlayerMovement : MonoBehaviour
             Debug.Log("Você errou o tiro.");
         }
     }
+
 
     private void AtualizarMapaVisualDaSalaAtual()
 {

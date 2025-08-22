@@ -4,7 +4,7 @@ public class TowerRunTimer : MonoBehaviour
 {
     private void Start()
     {
-      
+
         TowerStatsController.ResetarTodos();
     }
 

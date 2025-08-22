@@ -1,33 +1,29 @@
+using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 public class TowerRankingManager : MonoBehaviour
 {
     public static TowerRankingManager instancia;
-    public List<TowerPlayerData> ranking = new();
+    public List<TowerRunData> ranking = new();
 
     private void Awake()
     {
-        if (instancia == null)
-        {
-            instancia = this;
-            DontDestroyOnLoad(gameObject);
-        }
+        if (instancia == null) { instancia = this; DontDestroyOnLoad(gameObject); }
         else Destroy(gameObject);
     }
 
-    public void AdicionarRegistro(TowerPlayerData data)
+    public void AdicionarRegistro(TowerRunData data)
     {
         ranking.Add(data);
 
+  
         ranking = ranking
-            .OrderByDescending(p => p.pontuacao)
-            .ThenByDescending(p => p.wumpus)
-            .ThenByDescending(p => p.ouros)
-            .ThenBy(p => p.tempoTotal)
+            .OrderByDescending(r => r.pontuacao)
+            .ThenByDescending(r => r.wumpusMortos)
+            .ThenByDescending(r => r.ouro)
+            .ThenBy(r => r.passos)
+            .ThenBy(r => r.tempoTotal) 
             .ToList();
     }
-
-    public void LimparRanking() => ranking.Clear();
 }

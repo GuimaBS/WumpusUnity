@@ -5,15 +5,18 @@ public class GameFlowManager : MonoBehaviour
 {
     public void VoltarParaCharSelect()
     {
-        RankingController.SalvarDados();
-        TimerPontuacaoController.ResetarContadores();
-        SceneManager.LoadScene("CharSelect");
-    }
+        // Transições/Animators precisam de timeScale normal
+        if (Time.timeScale == 0f) Time.timeScale = 1f;
 
-    public void VoltarParaCharSelectTower()
-    {
-        TowerRankingController.SalvarDados();  
-        TowerStatsController.ResetarTodos();    
-        SceneManager.LoadScene("CharSelect");
+        // Tower: salva a run (se ainda não salvou) e zera para a próxima
+        TowerStatsController.TryCommitToRanking();
+        TowerStatsController.ResetarTodos();
+
+        // Clássico (se esses singletons não existirem nessa cena, ignore silenciosamente)
+        try { RankingController.SalvarDados(); } catch { }
+        try { TimerPontuacaoController.ResetarContadores(); } catch { }
+
+        // Carrega a CharSelect (modo padrão SINGLE)
+        SceneManager.LoadScene("CharSelect", LoadSceneMode.Single);
     }
 }

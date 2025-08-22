@@ -4908,7 +4908,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isDynamic: 0
-  text: MISS!
+  text: '{ERROU!}'
   size: 1
   letterSpacing: 0.35
   backgroundColor: {r: 0, g: 0, b: 0, a: 1}

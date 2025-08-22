@@ -468,6 +468,7 @@ GameObject:
   m_Component:
   - component: {fileID: 478590593}
   - component: {fileID: 478590592}
+  - component: {fileID: 478590594}
   m_Layer: 0
   m_Name: RankingUI
   m_TagString: Untagged
@@ -502,6 +503,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &478590594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 478590591}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6da2aba4d612794d8eee954388b42de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  painelRanking: {fileID: 2119040309}
 --- !u!1 &508161497
 GameObject:
   m_ObjectHideFlags: 0
@@ -589,12 +603,12 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 478590592}
         m_TargetAssemblyTypeName: GameFlowManager, Assembly-CSharp
-        m_MethodName: VoltarParaCharSelectTower
+        m_MethodName: VoltarParaCharSelect
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
+          m_IntArgument: 3
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
@@ -872,9 +886,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TabelaDePontosUI, Assembly-CSharp
-        m_MethodName: ExportarRankingParaTXT
+      - m_Target: {fileID: 478590594}
+        m_TargetAssemblyTypeName: RankingExporter, Assembly-CSharp
+        m_MethodName: ExportarRankingTorre
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1802,7 +1816,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000073360265}
+  m_AnchoredPosition: {x: 0, y: 0.0007726075}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1895036567
@@ -1973,7 +1987,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 548437763252507595, guid: 81265d8cc48d9c444a11fed7551b4ca6, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -3.504303
+      value: -3.5042725
       objectReference: {fileID: 0}
     - target: {fileID: 4623371909641782924, guid: 81265d8cc48d9c444a11fed7551b4ca6, type: 3}
       propertyPath: m_Name

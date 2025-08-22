@@ -70,9 +70,15 @@ public class TowerGridGenerator : MonoBehaviour
     public Vector2Int posicaoOuro;
     public Vector2Int posicaoEscada;
 
-    public bool wumpusMorto = false;
-    public bool ouroColetado = false;
+    public bool wumpusMorto => wumpusMortosCount >= totalWumpusAlvo;
+    public bool ouroColetado => ourosColetadosCount >= totalOurosAlvo;
     public bool escadaInstanciada = false;
+
+    public List<Vector2Int> posicoesWumpus = new List<Vector2Int>();
+    public List<Vector2Int> posicoesOuro = new List<Vector2Int>();
+
+    private int totalWumpusAlvo = 1, totalOurosAlvo = 1;
+    private int wumpusMortosCount = 0, ourosColetadosCount = 0;
 
     private Transform playerTr;
     private bool ultimoEstadoBotaoAvancar = false;
@@ -140,16 +146,21 @@ public class TowerGridGenerator : MonoBehaviour
         tamanhoY = Random.Range(4, 11);
         Debug.Log("[TowerGrid] Gerando andar " + andarAtual + ": " + tamanhoX + "x" + tamanhoY);
 
+        totalWumpusAlvo = (tamanhoX >= 10 || tamanhoY >= 10) ? 2 : 1;
+        totalOurosAlvo = totalWumpusAlvo;
+
+        wumpusMortosCount = 0;
+        ourosColetadosCount = 0;
+        posicoesWumpus.Clear();
+        posicoesOuro.Clear();
+        escadaInstanciada = false;
+
         LimparMapa();
         GerarMapa();
         GarantirSalaSeguraEm00();
         AplicarBrisaNosPocos();
-        InstanciarWumpus();
-        InstanciarOuro();
-        
-        ouroColetado = false;
-        wumpusMorto = false;
-        escadaInstanciada = false;
+        InstanciarVariosWumpus(totalWumpusAlvo);
+        InstanciarVariosOuros(totalOurosAlvo);
 
         MapaVisualTower.instancia?.InicializarMapa(tamanhoX, tamanhoY);
 
@@ -321,47 +332,75 @@ public class TowerGridGenerator : MonoBehaviour
 
     public void EliminarWumpusNaPosicao(Vector2Int pos)
     {
-        if (gridInfo.ContainsKey(pos) && gridInfo[pos].temWumpus)
+        if (!gridInfo.ContainsKey(pos) || !gridInfo[pos].temWumpus) return;
+
+        // Lógico
+        gridInfo[pos].temWumpus = false;
+        posicoesWumpus.Remove(pos);
+
+        // Visual
+        if (mapaGerado.TryGetValue(pos, out GameObject sala))
         {
-            gridInfo[pos].temWumpus = false;
-            wumpusMorto = true;
-
-            if (mapaGerado.TryGetValue(pos, out GameObject sala))
+            foreach (Transform child in sala.transform)
             {
-                foreach (Transform child in sala.transform)
+                if (child != null && child.CompareTag("wumpus"))
                 {
-                    if (child.CompareTag("wumpus"))
-                    {
-                        Destroy(child.gameObject);
-                        break;
-                    }
+                    Destroy(child.gameObject);
+                    break;
+                }
+            }
+        }
+        RecalcularFedorAdjacencias(pos);
+
+        wumpusMortosCount++;
+
+        TentarInstanciarEscadaSeElegivel();
+    }
+
+    private void RecalcularFedorAdjacencias(Vector2Int origemMorto)
+    {
+        foreach (var adj in VIZ)
+        {
+            Vector2Int c = origemMorto + adj;
+            if (!gridInfo.ContainsKey(c)) continue;
+
+            // Esta célula deve ter fedor se houver ALGUM wumpus vivo adjacente a ela
+            bool deveTerFedor = false;
+            foreach (var w in posicoesWumpus)
+            {
+                if (w == c + Vector2Int.up || w == c + Vector2Int.down ||
+                    w == c + Vector2Int.left || w == c + Vector2Int.right)
+                {
+                    deveTerFedor = true; break;
                 }
             }
 
-            Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-            foreach (var dir in dirs)
-            {
-                Vector2Int adj = pos + dir;
-                if (gridInfo.ContainsKey(adj))
-                {
-                    gridInfo[adj].temFedor = false;
+            gridInfo[c].temFedor = deveTerFedor;
 
-                    if (mapaGerado.TryGetValue(adj, out GameObject salaAdj))
+            if (mapaGerado.TryGetValue(c, out GameObject salaAdj))
+            {
+                // Remove/Cria partículas conforme estado
+                List<Transform> fedores = new List<Transform>();
+                foreach (Transform child in salaAdj.transform)
+                    if (child.name.Contains("Fedor")) fedores.Add(child);
+
+                if (deveTerFedor)
+                {
+                    if (fedores.Count == 0)
                     {
-                        List<Transform> remover = new List<Transform>();
-                        foreach (Transform child in salaAdj.transform)
-                        {
-                            if (child.name.Contains("Fedor"))
-                                remover.Add(child);
-                        }
-                        foreach (var t in remover) Destroy(t.gameObject);
+                        Vector3 posF = salaAdj.transform.position + Vector3.up * 1.5f;
+                        Instantiate(prefabFedor, posF, Quaternion.identity, salaAdj.transform);
                     }
                 }
+                else
+                {
+                    foreach (var t in fedores) Destroy(t.gameObject);
+                }
             }
-
-            TentarInstanciarEscadaSeElegivel();
         }
     }
+
+
 
     private void InstanciarOuro()
     {
@@ -397,23 +436,21 @@ public class TowerGridGenerator : MonoBehaviour
         if (!gridInfo.ContainsKey(pos) || !gridInfo[pos].temOuro) return;
 
         gridInfo[pos].temOuro = false;
-        ouroColetado = true;
+        posicoesOuro.Remove(pos);
 
         if (mapaGerado.TryGetValue(pos, out GameObject sala))
         {
-            Transform ouro = null;
-            Transform brilho = null;
-
+            Transform ouro = null, brilho = null;
             foreach (Transform child in sala.transform)
             {
                 if (child.CompareTag("ouro")) ouro = child;
                 else if (child.name == "Brilho" || child.name.Contains("Brilho")) brilho = child;
             }
-
             if (ouro) Destroy(ouro.gameObject);
             if (brilho) Destroy(brilho.gameObject);
         }
 
+        ourosColetadosCount++;
         TentarInstanciarEscadaSeElegivel();
     }
 
@@ -511,10 +548,9 @@ public class TowerGridGenerator : MonoBehaviour
 
             playerTr = existente;
 
-            // Zera quaisquer velocidades residuais (mantém seu padrão)
             if (existente.TryGetComponent<Rigidbody>(out var rb))
             {
-                rb.linearVelocity = Vector3.zero; 
+                rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
 
@@ -557,11 +593,8 @@ public class TowerGridGenerator : MonoBehaviour
     public void SubirParaProximoAndar()
     {
         andarAtual++;
-        ouroColetado = false;
-        wumpusMorto = false;
         escadaInstanciada = false;
         GerarNovoAndar();
-
         TowerUIManager.instancia?.AtualizarAndarAnimado(andarAtual);
     }
 
@@ -671,4 +704,102 @@ public class TowerGridGenerator : MonoBehaviour
         if (s.Count == 0) s.Add("vazio");
         return s;
     }
+
+    private void InstanciarVariosWumpus(int quantidade)
+    {
+        posicoesWumpus.Clear();
+
+        int tentativasMax = tamanhoX * tamanhoY * 8;
+        int tries = 0;
+
+        while (posicoesWumpus.Count < quantidade && tries++ < tentativasMax)
+        {
+            Vector2Int p = new Vector2Int(Random.Range(0, tamanhoX), Random.Range(0, tamanhoY));
+            if (p == Vector2Int.zero) continue;
+            if (!gridInfo.ContainsKey(p)) continue;
+            if (gridInfo[p].temPoco) continue;
+            if (gridInfo[p].temWumpus) continue;
+            if (gridInfo[p].temOuro) continue; // evita ouro e wumpus na mesma célula
+
+            // Lógico
+            gridInfo[p].temWumpus = true;
+            posicaoWumpus = p; // compatibilidade
+            posicoesWumpus.Add(p);
+
+            // Visual
+            Vector3 pos = mapaGerado[p].transform.position + Vector3.up * 0.5f;
+            Quaternion rot = Quaternion.Euler(0f, rotacaoYWumpus, 0f);
+
+            GameObject wumpusGO = Instantiate(prefabWumpus, pos, rot, mapaGerado[p].transform);
+            wumpusGO.name = "Wumpus";
+            wumpusGO.tag = "wumpus";
+
+            // Normalização/opcionais
+            NormalizarWorldScale(wumpusGO.transform, tamanhoMundialWumpus);
+            wumpusGO.transform.localPosition += offsetLocalWumpus;
+            wumpusGO.transform.localRotation = Quaternion.Euler(0f, rotacaoExtraYWumpus, 0f) * wumpusGO.transform.localRotation;
+
+            // Fedor nas adjacências (evita duplicar partículas)
+            foreach (var dir in VIZ)
+            {
+                Vector2Int adj = p + dir;
+                if (!gridInfo.ContainsKey(adj)) continue;
+
+                gridInfo[adj].temFedor = true;
+
+                if (mapaGerado.TryGetValue(adj, out var salaAdj))
+                {
+                    bool jaTem = false;
+                    foreach (Transform c in salaAdj.transform)
+                        if (c.name.Contains("Fedor")) { jaTem = true; break; }
+
+                    if (!jaTem)
+                    {
+                        Vector3 posF = salaAdj.transform.position + Vector3.up * 1.5f;
+                        Instantiate(prefabFedor, posF, Quaternion.identity, salaAdj.transform);
+                    }
+                }
+            }
+        }
+    }
+
+    private void InstanciarVariosOuros(int quantidade)
+    {
+        posicoesOuro.Clear();
+
+        int tentativasMax = tamanhoX * tamanhoY * 8;
+        int tries = 0;
+
+        while (posicoesOuro.Count < quantidade && tries++ < tentativasMax)
+        {
+            Vector2Int p = new Vector2Int(Random.Range(0, tamanhoX), Random.Range(0, tamanhoY));
+            if (p == Vector2Int.zero) continue;
+            if (!gridInfo.ContainsKey(p)) continue;
+            if (gridInfo[p].temPoco) continue;
+            if (gridInfo[p].temOuro) continue;
+            if (gridInfo[p].temWumpus) continue;
+
+            // Lógico
+            gridInfo[p].temOuro = true;
+            posicaoOuro = p; // compatibilidade
+            posicoesOuro.Add(p);
+
+            // Visual
+            Vector3 pos = mapaGerado[p].transform.position + Vector3.up * 0.5f;
+            Quaternion rot = Quaternion.Euler(0f, rotacaoYOuro, 0f);
+
+            GameObject ouroGO = Instantiate(prefabOuro, pos, rot, mapaGerado[p].transform);
+            ouroGO.name = "ouro";
+            ouroGO.tag = "ouro";
+
+            NormalizarWorldScale(ouroGO.transform, tamanhoMundialOuro);
+            ouroGO.transform.localPosition += offsetLocalOuro;
+            ouroGO.transform.localRotation = Quaternion.Euler(0f, rotacaoExtraYOuro, 0f) * ouroGO.transform.localRotation;
+
+            Vector3 posBrilho = pos + Vector3.up * 0.5f;
+            GameObject brilhoGO = Instantiate(prefabBrilho, posBrilho, Quaternion.identity, mapaGerado[p].transform);
+            brilhoGO.name = "Brilho";
+        }
+    }
+
 }

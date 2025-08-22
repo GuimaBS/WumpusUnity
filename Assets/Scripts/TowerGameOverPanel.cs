@@ -14,6 +14,7 @@ public class TowerGameOverPanel : MonoBehaviour
 
     [Header("Config")]
     public string cenaCharSelect = "CharSelect";
+    public string cenaTabeladePontosTower = "TabeladePontosTower";
     public bool pausarJogoAoMostrar = true;
     public bool desativarLeaderboard = true;
 
@@ -25,9 +26,6 @@ public class TowerGameOverPanel : MonoBehaviour
     {
         instancia = this;
         if (painelDerrota != null) painelDerrota.SetActive(false);
-
-        if (botaoCharSelect != null)
-            botaoCharSelect.onClick.AddListener(OnCliqueVoltarCharSelect);
 
         if (botaoLeaderboard != null)
         {
@@ -64,14 +62,8 @@ public class TowerGameOverPanel : MonoBehaviour
         if (painelDerrota != null) painelDerrota.SetActive(false);
     }
 
-    public void OnCliqueVoltarCharSelect()
-    {
-        if (pausarJogoAoMostrar) Time.timeScale = 1f;
-        SceneManager.LoadScene(cenaCharSelect);
-    }
-
     public void OnCliqueLeaderboard()
     {
-        Debug.Log("Leaderboard ainda não disponível.");
+        SceneManager.LoadScene(cenaTabeladePontosTower);
     }
 }

@@ -1,0 +1,13 @@
+Thanks for downloading Fantasy Music Suite II
+
+If you find this package useful, it would be greatly appreciated if you could leave me a review on the Unity Asset Store, as this is my only way to know how I'm doing.  Thank you!
+
+My hope in offering these free packages, is that game developers like yourself will find them useful and remember my name so that down the road when you want to hire someone to create custom music for your game, you will think of me :)
+
+
+Notes for Loop versions:
+
+When using one of the loop versions labelled "initial", this means you are to use this track first and follow that with the track titled "second and subsequent" which you would then loop.  
+
+
+Enjoy! 

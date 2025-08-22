@@ -45,26 +45,4 @@ public class TabelaDePontosUI : MonoBehaviour
         }
     }
 
-    public void ExportarRankingParaTXT()
-    {
-#if UNITY_EDITOR
-    // Caminho absoluto personalizado
-    string caminho = @"E:\Unity\Projetos UNITY\WumpusUnity\RankingPlayer\ranking.txt";
-#else
-        // Caminho padrão (para builds futuros)
-        string caminho = Path.Combine(Application.persistentDataPath, "ranking.txt");
-#endif
-
-        string conteudo = painelRanking.text;
-
-        try
-        {
-            File.WriteAllText(caminho, conteudo);
-            Debug.Log($"Ranking exportado para: {caminho}");
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Erro ao exportar ranking: {e.Message}");
-        }
-    }
 }

@@ -55,9 +55,16 @@ public class PlayerGridGenerator : MonoBehaviour
 
     public Vector2Int posicaoWumpus;
     public Vector2Int posicaoOuro;
-    public bool wumpusMorto = false;
-    public bool ouroColetado = false;
+    public bool wumpusMorto => wumpusMortos >= totalWumpusAlvo;
+    public bool ouroColetado => ourosColetadosCount >= totalOurosAlvo;
     public bool linhaInstanciada = false;
+    public List<Vector2Int> posicoesWumpus = new List<Vector2Int>();
+    public List<Vector2Int> posicoesOuro = new List<Vector2Int>();
+
+    private int totalWumpusAlvo = 1;
+    private int totalOurosAlvo = 1;
+    private int wumpusMortos = 0;
+    private int ourosColetadosCount = 0;
 
     [System.Serializable]
     public class TileInfo
@@ -80,6 +87,18 @@ public class PlayerGridGenerator : MonoBehaviour
 
         Debug.Log($"Gerando mapa {tamanhoX}x{tamanhoY}");
 
+        if (tamanhoX > 10 || tamanhoY > 10)
+        {
+            totalWumpusAlvo = 2;
+            totalOurosAlvo = 2;
+        }
+        else
+        {
+            totalWumpusAlvo = 1;
+            totalOurosAlvo = 1;
+        }
+
+
         if (MapaVisualPlayer.instancia != null)
         {
             MapaVisualPlayer.instancia.InicializarMapa(tamanhoX, tamanhoY);
@@ -88,12 +107,13 @@ public class PlayerGridGenerator : MonoBehaviour
         GerarMapa();
         GarantirSalaSeguraEm00();
         AplicarBrisaNosPocos();
-        InstanciarWumpus();
-        InstanciarOuro();
+        InstanciarVariosWumpus(totalWumpusAlvo);
+        InstanciarVariosOuros(totalOurosAlvo);
         SpawnarPlayer();
         TimerPontuacaoController.Reiniciar();
 
         OnMapaGerado?.Invoke();
+
     }
 
     private int tamanhoX;
@@ -129,6 +149,8 @@ public class PlayerGridGenerator : MonoBehaviour
 
                 TileInfo info = new TileInfo { temPoco = temPoco };
                 gridInfo.Add(gridPos, info);
+
+                if (temPoco)
                 RegistrarSensacao(gridPos, "poco");
             }
         }
@@ -187,9 +209,19 @@ public class PlayerGridGenerator : MonoBehaviour
             return;
         }
 
-        gridInfo[posicao].temWumpus = false;
-        posicaoWumpus = new Vector2Int(-1, -1);
+        // Só prossegue se realmente havia Wumpus aqui
+        if (!gridInfo[posicao].temWumpus)
+        {
+            Debug.Log($"[PlayerGrid] Não há Wumpus na sala {posicao} para eliminar.");
+            return;
+        }
 
+        // Estado lógico
+        gridInfo[posicao].temWumpus = false;
+        posicoesWumpus.Remove(posicao);
+        RemoverSensacao(posicao, "wumpus");
+
+        // Visual: destrói o objeto wumpus presente nesta sala
         if (mapaGerado.TryGetValue(posicao, out GameObject sala))
         {
             foreach (Transform child in sala.transform)
@@ -203,10 +235,61 @@ public class PlayerGridGenerator : MonoBehaviour
             }
         }
 
-        RemoverParticulasDeFedor(posicao);
+        // Recalcular fedor nas células afetadas (somente nas adjacentes ao morto)
+        RecalcularFedorAdjacencias(posicao);
 
-        UIManager.instancia?.AtualizarDWumpus(1);
-        Debug.Log($"[PlayerGrid] Wumpus eliminado com sucesso na posição {posicao}");
+        // UI/pontuação e contagem
+        UIManager.instancia?.AtualizarDWumpus(1); // mantém seu padrão
+        wumpusMortos++;
+
+        Debug.Log($"[PlayerGrid] Wumpus eliminado na {posicao}. Restantes: {totalWumpusAlvo - wumpusMortos}");
+
+        VerificarCondicaoParaLinhaDeChegada();
+    }
+
+    private void RecalcularFedorAdjacencias(Vector2Int origemMorto)
+    {
+        // Para cada adjacente à posição onde o Wumpus morreu,
+        // mantém fedor se ainda houver ALGUM outro wumpus adjacente a essa célula.
+        foreach (var adj in Adjacentes4(origemMorto))
+        {
+            if (!gridInfo.ContainsKey(adj)) continue;
+
+            bool deveTerFedor = false;
+            foreach (var wPos in posicoesWumpus)
+            {
+                // fedor aparece nas células adjacentes ao wumpus vivo
+                if (wPos == adj + Vector2Int.up ||
+                    wPos == adj + Vector2Int.down ||
+                    wPos == adj + Vector2Int.left ||
+                    wPos == adj + Vector2Int.right)
+                {
+                    deveTerFedor = true;
+                    break;
+                }
+            }
+
+            gridInfo[adj].temFedor = deveTerFedor;
+
+            if (mapaGerado.TryGetValue(adj, out var salaAdj))
+            {
+                var fedorTF = salaAdj.transform.Find("Fedor");
+                if (deveTerFedor)
+                {
+                    if (fedorTF == null)
+                    {
+                        Vector3 posFedor = salaAdj.transform.position + new Vector3(0, 1.5f, 0);
+                        Instantiate(prefabFedor, posFedor, Quaternion.identity, salaAdj.transform).name = "Fedor";
+                    }
+                    RegistrarSensacao(adj, "fedor");
+                }
+                else
+                {
+                    if (fedorTF != null) Destroy(fedorTF.gameObject);
+                    RemoverSensacao(adj, "fedor");
+                }
+            }
+        }
     }
 
     public void RemoverParticulasDeFedor(Vector2Int posicao)
@@ -347,6 +430,39 @@ public class PlayerGridGenerator : MonoBehaviour
         }
     }
 
+    private void InstanciarVariosWumpus(int quantidade)
+    {
+        posicoesWumpus.Clear();
+
+        int tentativasMax = tamanhoX * tamanhoY * 8;
+        int tries = 0;
+
+        while (posicoesWumpus.Count < quantidade && tries++ < tentativasMax)
+        {
+            Vector2Int p = new Vector2Int(Random.Range(0, tamanhoX), Random.Range(0, tamanhoY));
+
+            if (p == Vector2Int.zero) continue;                 // não em (0,0)
+            if (gridInfo[p].temPoco) continue;                  // não em poço
+            if (gridInfo[p].temWumpus) continue;                // não duplicar
+            if (gridInfo[p].temOuro) continue;                  // opcional: evitar ouro na mesma célula
+
+            // Marca lógica
+            gridInfo[p].temWumpus = true;
+            posicaoWumpus = p;
+            posicoesWumpus.Add(p);
+
+            // Visual
+            Vector3 pos = mapaGerado[p].transform.position + new Vector3(0, 0.5f, 0);
+            Quaternion rot = Quaternion.Euler(0f, rotacaoYWumpus, 0f);
+            var go = Instantiate(prefabWumpus, pos, rot, mapaGerado[p].transform);
+            go.tag = "wumpus";
+
+            // Sensações
+            RegistrarSensacao(p, "wumpus");
+            AplicarFedorNoWumpus(p);
+        }
+    }
+
     private void InstanciarOuro()
     {
         do
@@ -371,15 +487,91 @@ public class PlayerGridGenerator : MonoBehaviour
 
     }
 
+    private void InstanciarVariosOuros(int quantidade)
+    {
+        posicoesOuro.Clear();
+
+        int tentativasMax = tamanhoX * tamanhoY * 8;
+        int tries = 0;
+
+        while (posicoesOuro.Count < quantidade && tries++ < tentativasMax)
+        {
+            Vector2Int p = new Vector2Int(Random.Range(0, tamanhoX), Random.Range(0, tamanhoY));
+
+            if (p == Vector2Int.zero) continue;                 // não em (0,0)
+            if (gridInfo[p].temPoco) continue;                  // não em poço
+            if (gridInfo[p].temOuro) continue;                  // não duplicar
+            if (gridInfo[p].temWumpus) continue;                // opcional: evitar wumpus na mesma célula
+
+            // Marca lógica
+            gridInfo[p].temOuro = true;
+            posicaoOuro = p; // compatibilidade
+            posicoesOuro.Add(p);
+
+            // Visual
+            Vector3 pos = mapaGerado[p].transform.position + new Vector3(0, 0.5f, 0);
+            Quaternion rot = Quaternion.Euler(0f, rotacaoYOuro, 0f);
+            GameObject ouroObj = Instantiate(prefabOuro, pos, rot, mapaGerado[p].transform);
+            ouroObj.name = "ouro";
+            ouroObj.tag = "ouro";
+
+            Vector3 posBrilho = pos + new Vector3(0, 0.5f, 0);
+            Instantiate(prefabBrilho, posBrilho, Quaternion.identity, mapaGerado[p].transform).name = "Brilho";
+
+            RegistrarSensacao(p, "brilho");
+        }
+    }
+
+    public void ColetarOuroNaPosicao(Vector2Int posicao)
+    {
+        if (!gridInfo.ContainsKey(posicao))
+        {
+            Debug.LogWarning($"[PlayerGrid] Tentativa de coletar ouro em posição inválida: {posicao}");
+            return;
+        }
+
+        if (!gridInfo[posicao].temOuro)
+        {
+            Debug.Log($"[PlayerGrid] Não há ouro na sala {posicao} para coletar.");
+            return;
+        }
+
+        gridInfo[posicao].temOuro = false;
+        posicoesOuro.Remove(posicao);
+        RemoverSensacao(posicao, "brilho");
+
+        if (mapaGerado.TryGetValue(posicao, out GameObject sala))
+        {
+            // Destrói o 'ouro' e o 'Brilho' daquela sala
+            Transform ouroTF = null;
+            Transform brilhoTF = null;
+
+            foreach (Transform child in sala.transform)
+            {
+                if (child.name == "ouro") ouroTF = child;
+                if (child.name == "Brilho") brilhoTF = child;
+            }
+
+            if (ouroTF != null) Destroy(ouroTF.gameObject);
+            if (brilhoTF != null) Destroy(brilhoTF.gameObject);
+        }
+
+        ourosColetadosCount++;
+
+        Debug.Log($"[PlayerGrid] Ouro coletado em {posicao}. Restantes: {totalOurosAlvo - ourosColetadosCount}");
+
+        VerificarCondicaoParaLinhaDeChegada();
+    }
+
     public void RegistrarWumpusMorto()
     {
-        wumpusMorto = true;
+        wumpusMortos++;
         VerificarCondicaoParaLinhaDeChegada();
     }
 
     public void RegistrarOuroColetado()
     {
-        ouroColetado = true;
+        ourosColetadosCount++;
         VerificarCondicaoParaLinhaDeChegada();
     }
 
@@ -388,10 +580,12 @@ public class PlayerGridGenerator : MonoBehaviour
         if (wumpusMorto && ouroColetado && !linhaInstanciada)
         {
             linhaInstanciada = true;
-            Vector3 posicao = new Vector3(0, 0.01f, 0); // Ajuste de altura se necessário
+            Vector3 posicao = new Vector3(0, 0.01f, 0);
             Instantiate(linhaDeChegadaPrefab, posicao, Quaternion.identity);
+            Debug.Log("[PlayerGrid] Condições cumpridas: todos os Wumpus mortos e todos os Ouros coletados. Linha de chegada criada.");
         }
     }
+
 
     private void SpawnarPlayer()
     {
@@ -457,4 +651,22 @@ public class PlayerGridGenerator : MonoBehaviour
             sensacoesPorPosicao[pos].Add(tipo);
     }
 
+    private static readonly Vector2Int[] DIRS4 =
+{
+    Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right
+};
+
+    private IEnumerable<Vector2Int> Adjacentes4(Vector2Int p)
+    {
+        foreach (var d in DIRS4) yield return p + d;
+    }
+
+    private void RemoverSensacao(Vector2Int pos, string tipo)
+    {
+        if (sensacoesPorPosicao.TryGetValue(pos, out var lista))
+        {
+            if (lista.Contains(tipo)) lista.Remove(tipo);
+            if (lista.Count == 0) sensacoesPorPosicao.Remove(pos);
+        }
+    }
 }
