@@ -3074,7 +3074,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.4, y: 33.799995}
+  m_AnchoredPosition: {x: -0.9, y: 33.8}
   m_SizeDelta: {x: 273.669, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &981835668
@@ -3110,7 +3110,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Insira seu nick
+  m_Text: Insira  seu  nome
 --- !u!222 &981835669
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5285,8 +5285,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -142, y: 203.1}
-  m_SizeDelta: {x: 476.971, y: 52.561}
+  m_AnchoredPosition: {x: -117.157, y: 203.1}
+  m_SizeDelta: {x: 526.657, y: 52.561}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1760742492
 MonoBehaviour:
@@ -5321,7 +5321,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Escolha seu Personagem
+  m_Text: Escolha  seu  Personagem
 --- !u!222 &1760742493
 CanvasRenderer:
   m_ObjectHideFlags: 0
