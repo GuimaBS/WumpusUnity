@@ -430,6 +430,70 @@ public class PlayerGridGenerator : MonoBehaviour
         }
     }
 
+    // REMOVE marcações de fedor nas quatro vizinhas (sem diagonais) do 'centro'
+    public void RemoverFedorAoRedor(Vector2Int centro)
+    {
+        Vector2Int[] vizinhas = new Vector2Int[]
+        {
+        centro + Vector2Int.up,
+        centro + Vector2Int.down,
+        centro + Vector2Int.left,
+        centro + Vector2Int.right
+        };
+
+        foreach (var v in vizinhas)
+        {
+            if (!gridInfo.ContainsKey(v)) continue;
+            var info = gridInfo[v];
+            info.temFedor = false; // se você usa contador, troque por decremento
+            gridInfo[v] = info;
+        }
+    }
+
+    // ADICIONA marcações de fedor nas quatro vizinhas (sem diagonais) do 'centro'
+    public void AdicionarFedorAoRedor(Vector2Int centro)
+    {
+        Vector2Int[] vizinhas = new Vector2Int[]
+        {
+        centro + Vector2Int.up,
+        centro + Vector2Int.down,
+        centro + Vector2Int.left,
+        centro + Vector2Int.right
+        };
+
+        foreach (var v in vizinhas)
+        {
+            if (!gridInfo.ContainsKey(v)) continue;
+            var info = gridInfo[v];
+            info.temFedor = true; // se você usa contador, troque por incremento
+            gridInfo[v] = info;
+        }
+    }
+
+    // Move o Wumpus de uma sala para outra e atualiza o fedor com precisão.
+    public void MoverWumpus(Vector2Int de, Vector2Int para)
+    {
+        if (!gridInfo.ContainsKey(de) || !gridInfo.ContainsKey(para)) return;
+
+        // 1) limpa status da sala antiga
+        var infoDe = gridInfo[de];
+        infoDe.temWumpus = false;
+        gridInfo[de] = infoDe;
+
+        // 2) remove fedor do entorno antigo
+        RemoverFedorAoRedor(de);
+
+        // 3) aplica status na sala nova
+        var infoPara = gridInfo[para];
+        infoPara.temWumpus = true;
+        infoPara.temPoco = false; // o Wumpus ignora efeito de poço; garante que não morra
+        gridInfo[para] = infoPara;
+
+        // 4) adiciona fedor no entorno novo
+        AdicionarFedorAoRedor(para);
+    }
+
+
     private void InstanciarVariosWumpus(int quantidade)
     {
         posicoesWumpus.Clear();

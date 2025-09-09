@@ -283,9 +283,9 @@ MonoBehaviour:
   rotateClip: {fileID: 0}
   shootClip: {fileID: 0}
   dieClip: {fileID: 0}
-  collectGoldClip: {fileID: 0}
+  collectGoldClip: {fileID: 8300000, guid: 6fede028ba58b48d08e05b2bff883359, type: 3}
   blockedClip: {fileID: 0}
-  respawnClip: {fileID: 0}
+  respawnClip: {fileID: 8300000, guid: 8ff2a2d7e79f81c40ac447512f879374, type: 3}
   stepPitchRange: {x: 0.95, y: 1.05}
   ignoreListenerPause: 1
 --- !u!1 &7033181068626679955

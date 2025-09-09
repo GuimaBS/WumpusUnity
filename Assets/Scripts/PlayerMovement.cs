@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -55,6 +56,8 @@ public class PlayerMovement : MonoBehaviour
     private Vector2Int posicaoAtual;
     private bool fxMorteSpawned = false;
     private PlayerSfx sfx;
+
+    public static event Action<Vector2Int> OnPlayerStepped;
 
     // dispara a FX imediatamente no frame da detecção
     void SpawnMorteFX()
@@ -238,6 +241,8 @@ public class PlayerMovement : MonoBehaviour
 
         RegistrarWumpusEPoco();
         AtualizarMapaVisual();
+        Vector2Int posGridAposPasso = PlayerGridGenerator.instancia.ConverterPosicaoMundoParaGrid(transform.position);
+        OnPlayerStepped?.Invoke(posGridAposPasso);
     }
 
     bool EstaEmSalaComPoco()
