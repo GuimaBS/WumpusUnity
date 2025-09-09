@@ -5753,6 +5753,7 @@ GameObject:
   - component: {fileID: 983720639}
   - component: {fileID: 983720638}
   - component: {fileID: 983720637}
+  - component: {fileID: 983720640}
   m_Layer: 5
   m_Name: Button (Legacy)
   m_TagString: Untagged
@@ -5876,6 +5877,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 983720635}
   m_CullTransparentMesh: 1
+--- !u!114 &983720640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 983720635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: 16d0788660e724f44ae05e641af1b222, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &987147030
 GameObject:
   m_ObjectHideFlags: 0
@@ -8002,6 +8019,7 @@ GameObject:
   - component: {fileID: 1472681995}
   - component: {fileID: 1472681994}
   - component: {fileID: 1472681993}
+  - component: {fileID: 1472681996}
   m_Layer: 5
   m_Name: Continuar
   m_TagString: Untagged
@@ -8124,6 +8142,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1472681991}
   m_CullTransparentMesh: 1
+--- !u!114 &1472681996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472681991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: 16d0788660e724f44ae05e641af1b222, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &1486380409
 GameObject:
   m_ObjectHideFlags: 0
@@ -9454,6 +9488,7 @@ GameObject:
   - component: {fileID: 1774600302}
   - component: {fileID: 1774600301}
   - component: {fileID: 1774600300}
+  - component: {fileID: 1774600303}
   m_Layer: 5
   m_Name: botaodepause
   m_TagString: Untagged
@@ -9575,6 +9610,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1774600298}
   m_CullTransparentMesh: 1
+--- !u!114 &1774600303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1774600298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: 1be2fcc16ab0da84f99ba7c633037620, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &1775217760
 GameObject:
   m_ObjectHideFlags: 0

@@ -54,6 +54,7 @@ public class PlayerMovement : MonoBehaviour
     private bool vitoriaAlcancada = false;
     private Vector2Int posicaoAtual;
     private bool fxMorteSpawned = false;
+    private PlayerSfx sfx;
 
     // dispara a FX imediatamente no frame da detecção
     void SpawnMorteFX()
@@ -143,6 +144,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isMoving || isDying) return;
         animator?.SetTrigger("girarEs");
+        sfx?.PlayRotate();
         targetRotation *= Quaternion.Euler(0, -90, 0);
     }
 
@@ -150,6 +152,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isMoving || isDying) return;
         animator?.SetTrigger("girarDir");
+        sfx?.PlayRotate();
         targetRotation *= Quaternion.Euler(0, 90, 0);
     }
 
@@ -170,12 +173,14 @@ public class PlayerMovement : MonoBehaviour
             Debug.Log("Tentativa de sair do mapa bloqueada!");
             if (particulaBatidaLimite != null)
                 Instantiate(particulaBatidaLimite, transform.position + offsetparticulaBatidaLimite, Quaternion.identity);
+                sfx?.PlayBlocked();
             return;
         }
 
         StartCoroutine(MoveToPosition(destination, dir));
 
         animator?.SetTrigger("foward");
+        sfx?.PlayStep();
 
         TimerPontuacaoController.passosDados++;
         TimerPontuacaoController.pontuacaoFinal -= 1;
@@ -289,6 +294,7 @@ public class PlayerMovement : MonoBehaviour
 
         UIManager.instancia?.AlterarPontuacao(-1000);
         TimerPontuacaoController.pontuacaoFinal -= 1000;
+        sfx?.PlayDie();
         yield return new WaitForSeconds(1f);
 
         RespawnarPlayer();
@@ -317,6 +323,7 @@ public class PlayerMovement : MonoBehaviour
                     {
                         animWumpus.SetTrigger("wattack");
                         animator?.SetTrigger("queda");
+                        sfx?.PlayDie();
                     }
                     break;
                 }
@@ -400,6 +407,7 @@ public class PlayerMovement : MonoBehaviour
 
         AtualizarSalaAtual();
         Debug.Log("Jogador respawnado corretamente na sala (0,0), câmera reposicionada.");
+        sfx?.PlayRespawn();
         ChecarCondicaoDeVitoria();
 
         isDying = false;
@@ -431,6 +439,7 @@ public class PlayerMovement : MonoBehaviour
         AtualizarUI();
         animator?.SetTrigger("Atirar");
         StartCoroutine(DispararFlechaComDelay(0.3f));
+        sfx?.PlayShoot();
     }
 
     IEnumerator DispararFlechaComDelay(float delay)
@@ -503,6 +512,7 @@ public class PlayerMovement : MonoBehaviour
             ouro++;
             UIManager.instancia?.AlterarPontuacao(1000);
             TimerPontuacaoController.pontuacaoFinal += 1000;
+            sfx?.PlayCollectGold();
 
             // efeito de coleta
             if (prefabParticulaColetar != null)

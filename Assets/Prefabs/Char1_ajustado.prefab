@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 286847862854263273}
   - component: {fileID: 5214014332562427188}
   - component: {fileID: -2767575324840649598}
+  - component: {fileID: 5889604645272156982}
   m_Layer: 0
   m_Name: Char1_ajustado
   m_TagString: arqueiro
@@ -264,6 +265,29 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &5889604645272156982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4861529805469328971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32d0fe627c9db5d46a6b814dec52b6f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mixerGroup: {fileID: 0}
+  volume: 0.9
+  stepClips: []
+  rotateClip: {fileID: 0}
+  shootClip: {fileID: 0}
+  dieClip: {fileID: 0}
+  collectGoldClip: {fileID: 0}
+  blockedClip: {fileID: 0}
+  respawnClip: {fileID: 0}
+  stepPitchRange: {x: 0.95, y: 1.05}
+  ignoreListenerPause: 1
 --- !u!1 &7033181068626679955
 GameObject:
   m_ObjectHideFlags: 0

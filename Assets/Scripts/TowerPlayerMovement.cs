@@ -55,6 +55,7 @@ public class TowerPlayerMovement : MonoBehaviour
     private int vidas = 5;
 
     private Vector2Int ultimaSalaAtiva = new Vector2Int(-999, -999);
+    private TowerPlayerSfx sfx;
 
     private void OnEnable()
     {
@@ -92,6 +93,7 @@ public class TowerPlayerMovement : MonoBehaviour
         if (isMoving || isDying || gameOver) return;
         targetRotation *= Quaternion.Euler(0, -90, 0);
         anim?.SetTrigger("girarEs");
+        sfx?.PlayRotate();
     }
 
     public void RotateRight()
@@ -99,6 +101,7 @@ public class TowerPlayerMovement : MonoBehaviour
         if (isMoving || isDying || gameOver) return;
         targetRotation *= Quaternion.Euler(0, 90, 0);
         anim?.SetTrigger("girarDir");
+        sfx?.PlayRotate();
     }
 
     public void MoveForward()
@@ -117,7 +120,7 @@ public class TowerPlayerMovement : MonoBehaviour
         {
             if (particulaBatidaLimite != null)
                 Instantiate(particulaBatidaLimite, transform.position + offsetparticulaBatidaLimite, Quaternion.identity);
-
+                sfx?.PlayBlocked();
             Debug.Log("Tentativa de sair do mapa bloqueada!");
             return;
         }
@@ -130,6 +133,7 @@ public class TowerPlayerMovement : MonoBehaviour
 
         StartCoroutine(MoveToPosition(destination));
         anim?.SetTrigger("foward");
+        sfx?.PlayStep();
     }
 
     bool SalaExisteNaDirecao(Vector3 direcao)
@@ -229,6 +233,7 @@ public class TowerPlayerMovement : MonoBehaviour
         cam?.FocarNoPonto(CentroDaSalaAtual());
 
         anim?.SetTrigger("queda");
+        sfx?.PlayDie();
         var queda = GetComponent<FallOnDeath>();
         if (queda != null)
             yield return StartCoroutine(queda.ExecutarQueda());
@@ -247,6 +252,7 @@ public class TowerPlayerMovement : MonoBehaviour
 
         DispararAnimacaoWumpusAtaqueNaSalaAtual();
         anim?.SetTrigger("queda");
+        sfx?.PlayDie();
 
         if (prefabParticulaMorte != null)
             Instantiate(prefabParticulaMorte, transform.position + Vector3.up * 1f, Quaternion.identity);
@@ -297,6 +303,7 @@ public class TowerPlayerMovement : MonoBehaviour
 
         if (prefabParticulaRespawn != null)
             Instantiate(prefabParticulaRespawn, transform.position + offsetParticulaRespawn, Quaternion.identity);
+            sfx?.PlayRespawn();
 
         ForcarIdle();
 
@@ -390,6 +397,7 @@ public class TowerPlayerMovement : MonoBehaviour
             gridGen.RemoverOuroNaPosicao(pos);
 
             anim?.SetTrigger("Pick");
+            sfx?.PlayCollectGold();
 
             if (prefabParticulaColetaOuro != null)
                 Instantiate(prefabParticulaColetaOuro, transform.position + Vector3.up * 1f, Quaternion.identity);
@@ -422,6 +430,7 @@ public class TowerPlayerMovement : MonoBehaviour
         TowerUIManager.instancia?.AtualizarFlechas(flechas);
 
         anim?.SetTrigger("Atirar");
+        sfx?.PlayShoot();
 
         StartCoroutine(DispararFlechaComDelay(delayDisparo));
     }

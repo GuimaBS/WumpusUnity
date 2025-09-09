@@ -83,6 +83,8 @@ public class TowerGridGenerator : MonoBehaviour
     private Transform playerTr;
     private bool ultimoEstadoBotaoAvancar = false;
 
+    private TowerPlayerSfx playerSfx;
+
     public int andarAtual = 1;
 
     [Header("Mapa Gerado")]
@@ -480,6 +482,7 @@ public class TowerGridGenerator : MonoBehaviour
 
             OnEscadaLiberada?.Invoke();
             Debug.Log("[TowerGrid] Escada instanciada (borda superior) em " + posicaoEscada);
+            playerSfx?.PlayFloorUnlocked();
         }
     }
 
