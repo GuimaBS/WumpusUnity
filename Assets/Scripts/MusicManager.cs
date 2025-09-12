@@ -16,6 +16,11 @@ public class MusicManager : MonoBehaviour
     [Range(0f, 1f)] public float menuVolume = 0.6f;
     [Range(0f, 1f)] public float gameplayVolume = 0.7f;
 
+    [Header("Cena específica")]
+    [Tooltip("Trilha exclusiva para a cena de buildIndex = 2")]
+    public AudioClip scene2Music;                      // NOVO
+    [Range(0f, 1f)] public float scene2Volume = 0.7f;   // NOVO
+
     [Header("Transição")]
     [Tooltip("Duração do crossfade (segundos)")]
     public float crossfadeDuration = 0.8f;
@@ -32,6 +37,7 @@ public class MusicManager : MonoBehaviour
     private Coroutine _xfade;
     private float _menuTime;              // posição salva da música de menu
     private float _gameplayTime;          // posição salva da música de gameplay
+    private float _scene2Time;            // >>> NOVO: posição salva da música da cena 2
 
     void Awake()
     {
@@ -69,6 +75,13 @@ public class MusicManager : MonoBehaviour
     {
         int idx = scene.buildIndex;
 
+        // >>> NOVO: prioridade para a cena 2
+        if (idx == 2 && scene2Music != null)
+        {
+            SwitchToScene2();
+            return;
+        }
+
         if (menuScenes.Contains(idx))
             SwitchToMenu();
         else if (gameplayScenes.Contains(idx))
@@ -80,6 +93,9 @@ public class MusicManager : MonoBehaviour
     // -------- switches públicos (se quiser chamar manualmente) --------
     public void SwitchToMenu() => SwitchToClip(menuMusic, menuVolume, ref _menuTime);
     public void SwitchToGameplay() => SwitchToClip(gameplayMusic, gameplayVolume, ref _gameplayTime);
+
+    // >>> NOVO: Switch específico para a cena 2
+    public void SwitchToScene2() => SwitchToClip(scene2Music, scene2Volume, ref _scene2Time);
 
     // ---------------- núcleo de troca com crossfade -------------------
     private void SwitchToClip(AudioClip clip, float targetVol, ref float savedTime)
@@ -164,6 +180,7 @@ public class MusicManager : MonoBehaviour
         if (src == null || src.clip == null) return;
         if (src.clip == menuMusic) _menuTime = src.time;
         else if (src.clip == gameplayMusic) _gameplayTime = src.time;
+        else if (src.clip == scene2Music) _scene2Time = src.time; // >>> NOVO
     }
 
     private void FadeOutAndStopAll()

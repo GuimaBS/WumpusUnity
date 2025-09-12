@@ -1976,6 +1976,7 @@ GameObject:
   - component: {fileID: 626763512}
   - component: {fileID: 626763511}
   - component: {fileID: 626763510}
+  - component: {fileID: 626763513}
   m_Layer: 5
   m_Name: Voltar
   m_TagString: Untagged
@@ -2099,6 +2100,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 626763508}
   m_CullTransparentMesh: 1
+--- !u!114 &626763513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 626763508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: 16d0788660e724f44ae05e641af1b222, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &661391400
 GameObject:
   m_ObjectHideFlags: 0
@@ -2569,6 +2586,7 @@ GameObject:
   - component: {fileID: 814335686}
   - component: {fileID: 814335685}
   - component: {fileID: 814335684}
+  - component: {fileID: 814335687}
   m_Layer: 5
   m_Name: Modo 2
   m_TagString: Untagged
@@ -2621,7 +2639,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9882353, g: 0.7372549, b: 0.53333336, a: 1}
     m_PressedColor: {r: 1, g: 0.49019608, b: 0.49019608, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 1, g: 0.49019608, b: 0.49019608, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -2691,6 +2709,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 814335682}
   m_CullTransparentMesh: 1
+--- !u!114 &814335687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 814335682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: d6945231be24c7240a281458fc849e1f, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &864956665
 GameObject:
   m_ObjectHideFlags: 0
@@ -4212,6 +4246,7 @@ GameObject:
   - component: {fileID: 1277887856}
   - component: {fileID: 1277887855}
   - component: {fileID: 1277887854}
+  - component: {fileID: 1277887857}
   m_Layer: 5
   m_Name: Voltar
   m_TagString: Untagged
@@ -4359,6 +4394,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1277887852}
   m_CullTransparentMesh: 1
+--- !u!114 &1277887857
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1277887852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: 16d0788660e724f44ae05e641af1b222, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &1327874621
 GameObject:
   m_ObjectHideFlags: 0
@@ -4525,6 +4576,7 @@ GameObject:
   - component: {fileID: 1398105514}
   - component: {fileID: 1398105513}
   - component: {fileID: 1398105512}
+  - component: {fileID: 1398105515}
   m_Layer: 5
   m_Name: Modo 1
   m_TagString: Untagged
@@ -4577,7 +4629,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9885284, g: 0.73719466, b: 0.5336561, a: 1}
     m_PressedColor: {r: 1, g: 0.4891321, b: 0.4891321, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 1, g: 0.49019608, b: 0.49019608, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -4647,6 +4699,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1398105510}
   m_CullTransparentMesh: 1
+--- !u!114 &1398105515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1398105510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: d6945231be24c7240a281458fc849e1f, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &1440405708
 GameObject:
   m_ObjectHideFlags: 0
@@ -4818,6 +4886,7 @@ GameObject:
   - component: {fileID: 1622693352}
   - component: {fileID: 1622693351}
   - component: {fileID: 1622693350}
+  - component: {fileID: 1622693353}
   m_Layer: 5
   m_Name: Char1
   m_TagString: Untagged
@@ -4869,7 +4938,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9885284, g: 0.7909523, b: 0.6912238, a: 1}
     m_PressedColor: {r: 0.952302, g: 0.53107244, b: 0.32090783, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0.9529412, g: 0.5294118, b: 0.32156864, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -4939,6 +5008,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1622693348}
   m_CullTransparentMesh: 1
+--- !u!114 &1622693353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1622693348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: d6945231be24c7240a281458fc849e1f, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &1644981007
 GameObject:
   m_ObjectHideFlags: 0
@@ -5654,6 +5739,7 @@ GameObject:
   - component: {fileID: 1955929020}
   - component: {fileID: 1955929019}
   - component: {fileID: 1955929018}
+  - component: {fileID: 1955929021}
   m_Layer: 5
   m_Name: Char2
   m_TagString: Untagged
@@ -5705,7 +5791,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9882353, g: 0.7921569, b: 0.6901961, a: 1}
     m_PressedColor: {r: 0.9529412, g: 0.5294118, b: 0.32156864, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0.9529412, g: 0.5294118, b: 0.32156864, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -5775,6 +5861,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1955929016}
   m_CullTransparentMesh: 1
+--- !u!114 &1955929021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1955929016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: d6945231be24c7240a281458fc849e1f, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1 &2081143781
 GameObject:
   m_ObjectHideFlags: 0
@@ -5862,6 +5964,7 @@ GameObject:
   - component: {fileID: 2113380962}
   - component: {fileID: 2113380961}
   - component: {fileID: 2113380960}
+  - component: {fileID: 2113380963}
   m_Layer: 5
   m_Name: Iniciar
   m_TagString: Untagged
@@ -5984,6 +6087,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2113380958}
   m_CullTransparentMesh: 1
+--- !u!114 &2113380963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2113380958}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4a745b5ef1823846aaeea4206a4a79f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverOverride: {fileID: 0}
+  clickOverride: {fileID: 8300000, guid: 973cbfce50fc9634b8c2729624d4cc4d, type: 3}
+  localFallbackIfNoManager: 1
+  localVolume: 0.85
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

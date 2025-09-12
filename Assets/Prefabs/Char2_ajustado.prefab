@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 2617442072629839002}
   - component: {fileID: 8856342544773610241}
   - component: {fileID: -5499000815805645969}
+  - component: {fileID: -5395471084432727529}
   m_Layer: 0
   m_Name: Char2_ajustado
   m_TagString: amazona
@@ -264,6 +265,35 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &-5395471084432727529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7768985651386433940}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32d0fe627c9db5d46a6b814dec52b6f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mixerGroup: {fileID: 0}
+  volume: 0.9
+  stepClips: []
+  rotateClip: {fileID: 0}
+  shootClip: {fileID: 0}
+  dieClip: {fileID: 0}
+  collectGoldClip: {fileID: 0}
+  blockedClip: {fileID: 0}
+  respawnClip: {fileID: 0}
+  victorySfx: {fileID: 0}
+  roarclip: {fileID: 0}
+  roarnearclip: {fileID: 0}
+  stepPitchRange: {x: 0.95, y: 1.05}
+  ignoreListenerPause: 1
+  victoryVolume: 1
+  roarKillVolume: 0.9
+  roarAmbientVolume: 0.35
 --- !u!1 &8175971167972908365
 GameObject:
   m_ObjectHideFlags: 0

@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 286847862854263273}
   - component: {fileID: 561813169550510692}
   - component: {fileID: 4182554756575730037}
+  - component: {fileID: -8965606448457915789}
   m_Layer: 0
   m_Name: Char1_ajustadoTOWER
   m_TagString: arqueiro
@@ -258,6 +259,30 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &-8965606448457915789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4861529805469328971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5915c307134ff6045ac9fa449bffee95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mixerGroup: {fileID: 0}
+  volume: 0.9
+  stepClips: []
+  rotateClip: {fileID: 8300000, guid: eaae8fe8d600e1f459f34aa5757fa3b8, type: 3}
+  shootClip: {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
+  dieClip: {fileID: 8300000, guid: 21c4a490b24ba2045bc815f7626a40ef, type: 3}
+  collectGoldClip: {fileID: 8300000, guid: 2a71d8e8ea428e0409d3df636b9f0192, type: 3}
+  blockedClip: {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
+  floorUnlockedClip: {fileID: 8300000, guid: a65e44e8c694a3a4891eef0db109e331, type: 3}
+  respawnClip: {fileID: 8300000, guid: 8ff2a2d7e79f81c40ac447512f879374, type: 3}
+  stepPitchRange: {x: 0.95, y: 1.05}
+  minStepInterval: 0.12
 --- !u!1 &7033181068626679955
 GameObject:
   m_ObjectHideFlags: 0

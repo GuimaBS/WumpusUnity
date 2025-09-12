@@ -48,7 +48,7 @@ public class PlayerMovement : MonoBehaviour
     private Animator animator;
     private Collider playerCollider;
     private Renderer[] renderers;
-    private Transform salaFocus; // mantido para utilidades internas (não é mais o alvo da câmera)
+    private Transform salaFocus; 
 
     private bool isMoving = false;
     private bool isDying = false;
@@ -77,6 +77,9 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         VerificarRespawnPoint();
+
+        sfx = GetComponent<PlayerSfx>();
+        if (sfx == null) sfx = gameObject.AddComponent<PlayerSfx>();
     }
 
     private void VerificarRespawnPoint()
@@ -310,6 +313,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Debug.Log("O jogador foi morto pelo Wumpus!");
 
+
         // Identifica a posição atual do player
         Vector2Int pos = new Vector2Int(
             Mathf.RoundToInt(transform.position.x / moveDistance),
@@ -328,6 +332,7 @@ public class PlayerMovement : MonoBehaviour
                     {
                         animWumpus.SetTrigger("wattack");
                         animator?.SetTrigger("queda");
+                        sfx?.PlayWumpusRoarKill();
                         sfx?.PlayDie();
                     }
                     break;
@@ -579,6 +584,7 @@ public class PlayerMovement : MonoBehaviour
             Instantiate(prefabParticulaVitoria, transform.position + Vector3.up * 1f, Quaternion.identity);
 
         animator?.SetTrigger("win");
+        sfx?.PlayWin();
         UIManager.instancia?.MostrarPainelVitoria();
     }
 

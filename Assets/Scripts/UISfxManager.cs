@@ -19,7 +19,7 @@ public class UISfxManager : MonoBehaviour
 
     void Awake()
     {
-        // Se já existe um manager, REMOVA SÓ ESTE COMPONENTE (não destrua o botão/canvas!)
+
         if (I != null && I != this)
         {
             Destroy(this);

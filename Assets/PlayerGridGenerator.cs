@@ -44,6 +44,14 @@ public class PlayerGridGenerator : MonoBehaviour
     public Transform paiDasSalas;
     public Transform paiDoPlayer;
 
+    [Header("Áudio de Fedor")]
+    public bool tocarRugidoEmFedor = true;
+    [Tooltip("Intervalo mínimo entre toques (evita spam ao atravessar várias salas fedidas em sequência).")]
+    public float delayEntreRugidos = 1.5f;
+
+    private float _ultimoRugidoTime = -999f;
+    private PlayerSfx _playerSfx;   // será resolvido on-demand
+
     [Header("Offset para Centralizar na Sala")]
     public Vector3 offsetCentroSala = new Vector3(5, 0, 5);
 
@@ -76,6 +84,19 @@ public class PlayerGridGenerator : MonoBehaviour
         public bool temWumpus;
         public bool foiVisitada = false;
     }
+
+    private void OnEnable()
+    {
+        // ... (o que você já tem)
+        PlayerMovement.OnPlayerStepped += HandlePlayerStepped_FedorAudio;
+    }
+
+    private void OnDisable()
+    {
+        // ... (o que você já tem)
+        PlayerMovement.OnPlayerStepped -= HandlePlayerStepped_FedorAudio;
+    }
+
 
     private void Awake()
     {
@@ -733,4 +754,26 @@ public class PlayerGridGenerator : MonoBehaviour
             if (lista.Count == 0) sensacoesPorPosicao.Remove(pos);
         }
     }
+
+    private void HandlePlayerStepped_FedorAudio(Vector2Int pos)
+    {
+        if (!tocarRugidoEmFedor) return;
+
+        // Garante lookup da célula com segurança
+        if (!gridInfo.TryGetValue(pos, out var info)) return;
+
+        if (info.temFedor)
+        {
+            // Rate limit (opcional): só toca se passou o intervalo
+            if (Time.unscaledTime - _ultimoRugidoTime < delayEntreRugidos) return;
+
+            if (_playerSfx == null)
+                _playerSfx = FindFirstObjectByType<PlayerSfx>(); // pega do Player
+
+            _playerSfx?.PlayWumpusRoarAmbient();
+            _ultimoRugidoTime = Time.unscaledTime;
+        }
+    }
+
+
 }

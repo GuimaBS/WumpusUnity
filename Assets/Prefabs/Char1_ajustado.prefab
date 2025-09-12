@@ -280,14 +280,20 @@ MonoBehaviour:
   mixerGroup: {fileID: 0}
   volume: 0.9
   stepClips: []
-  rotateClip: {fileID: 0}
-  shootClip: {fileID: 0}
-  dieClip: {fileID: 0}
-  collectGoldClip: {fileID: 8300000, guid: 6fede028ba58b48d08e05b2bff883359, type: 3}
-  blockedClip: {fileID: 0}
+  rotateClip: {fileID: 8300000, guid: eaae8fe8d600e1f459f34aa5757fa3b8, type: 3}
+  shootClip: {fileID: 8300000, guid: f11db4559b3ffff45b62e9327fc5535d, type: 3}
+  dieClip: {fileID: 8300000, guid: 21c4a490b24ba2045bc815f7626a40ef, type: 3}
+  collectGoldClip: {fileID: 8300000, guid: 2a71d8e8ea428e0409d3df636b9f0192, type: 3}
+  blockedClip: {fileID: 8300000, guid: 7c47b20bb9874304a809dc5580d403ba, type: 3}
   respawnClip: {fileID: 8300000, guid: 8ff2a2d7e79f81c40ac447512f879374, type: 3}
+  victorySfx: {fileID: 8300000, guid: 2667a0a008b044e218b63df62e2be749, type: 3}
+  roarclip: {fileID: 8300000, guid: 228a434ca9f954909a9176e45f877eaa, type: 3}
+  roarnearclip: {fileID: 8300000, guid: fbb2d30773dc54d4c923efab121c32e9, type: 3}
   stepPitchRange: {x: 0.95, y: 1.05}
   ignoreListenerPause: 1
+  victoryVolume: 1
+  roarKillVolume: 0.9
+  roarAmbientVolume: 0.35
 --- !u!1 &7033181068626679955
 GameObject:
   m_ObjectHideFlags: 0
