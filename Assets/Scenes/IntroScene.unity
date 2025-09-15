@@ -1609,7 +1609,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "Por:\nBettina Guimar\xE3es e Davi Barroso"
+  m_Text: Ver. 1.38 ALFA
 --- !u!222 &1133950491
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -1,22 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
-using System.Linq;
 
 public class Agent3PerfectRunner : MonoBehaviour
 {
-    [Header("Referências")]
-    public GridGenerator grid;                 // arraste o GridGenerator da cena (opcional)
+    [Header("Referï¿½ncias")]
+    public GridGenerator grid;                 // opcional: encontra sozinho
     public GameObject agente3Prefab;           // prefab do Agente 3
-    public Transform spawnPai;                 // opcional: parent
+    public Transform spawnPai;                 // opcional
 
-    [Header("Movimentação")]
+    [Header("Movimentaï¿½ï¿½o")]
     public float moveSpeed = 6f;
     public float rotateSpeed = 720f;
     public float stepPause = 0.02f;
 
-    [Header("Pontuação (regras do Lab)")]
+    [Header("Pontuaï¿½ï¿½o (regras do Lab)")]
     public int score { get; private set; } = 0;
     public int passosTotais { get; private set; } = 0;
     public int mortes { get; private set; } = 0;
@@ -24,11 +24,21 @@ public class Agent3PerfectRunner : MonoBehaviour
     [Header("Eventos p/ painel de LOG")]
     public UnityEvent<string> OnLog;
 
-    [Header("Opções de Log")]
+    [Header("Opï¿½ï¿½es de Log")]
     public bool logNoConsole = true;
     public bool logPercepcao = true;
     public bool logMovimento = true;
     public bool logResumoFinal = true;
+
+    [Header("Prefab: seguranï¿½a")]
+    [Tooltip("Desativa todos os MonoBehaviours do prefab instanciado (exceto componentes visuais) para evitar IAs/Updates paralelos.")]
+    public bool desativarScriptsDoPrefab = true;
+
+    [Tooltip("Faz o Rigidbody (se houver) ficar kinematic e sem gravidade.")]
+    public bool travarRigidbody = true;
+
+    [Header("Eventos de ciclo")]
+    public UnityEvent OnFinished;              // dispara quando termina
 
     // Estado
     private GameObject agenteGO;
@@ -36,21 +46,29 @@ public class Agent3PerfectRunner : MonoBehaviour
     private Vector2Int pos; // grid
     private bool todosWumpusEliminados = false;
     private bool ouroJaColetado = false;
-
     private bool _executando = false;
-
-    [Header("Eventos de ciclo")]
-    public UnityEvent OnFinished; 
+    private bool _finalizado = false;
 
     // Auxiliares
     private float CellSize => GridGenerator.instancia != null ? GridGenerator.instancia.tileSize : 1.7f;
     private int MaxX => GridGenerator.tamanhoX;
     private int MaxY => GridGenerator.tamanhoY;
 
-    // ----- API -----
+    // ===== Ciclo de vida =====
+    private void OnDisable() { _executando = false; StopAllCoroutines(); }
+    private void OnDestroy() { _executando = false; StopAllCoroutines(); }
+
+    // ===== API =====
     public void RunBenchmark()
     {
+        if (_executando) { Emit("[Coringa] Jï¿½ estï¿½ em execuï¿½ï¿½o."); return; }
+#if UNITY_2023_1_OR_NEWER
+        if (grid == null) grid = Object.FindFirstObjectByType<GridGenerator>(FindObjectsInactive.Exclude);
+#else
         if (grid == null) grid = FindObjectOfType<GridGenerator>();
+#endif
+        _finalizado = false;           // <<<<<< CORREï¿½ï¿½O (antes estava true)
+        _executando = true;
         StopAllCoroutines();
         StartCoroutine(ExecBenchmark());
     }
@@ -61,15 +79,18 @@ public class Agent3PerfectRunner : MonoBehaviour
         passosTotais = 0;
         mortes = 0;
         todosWumpusEliminados = false;
-        ouroJaColetado = GridGenerator.ouroColetado; // caso mapa venha com ouro já coletado (não deveria)
-        if (agenteGO != null) Destroy(agenteGO);
+        ouroJaColetado = GridGenerator.ouroColetado; // normalmente false
+
+        if (agenteGO != null) { Destroy(agenteGO); agenteGO = null; }
+        agente = null; // evita acessar Transform destruï¿½do
     }
 
     private IEnumerator ExecBenchmark()
     {
         if (GridGenerator.instancia == null)
         {
-            Emit("[Coringa] GridGenerator.instancia não encontrado.");
+            Emit("[Coringa] GridGenerator.instancia nï¿½o encontrado.");
+            _executando = false;
             yield break;
         }
 
@@ -79,17 +100,32 @@ public class Agent3PerfectRunner : MonoBehaviour
         Vector2Int start = new Vector2Int(0, 0);
         Vector3 worldStart = ParaMundo(start);
         agenteGO = Instantiate(agente3Prefab, worldStart, Quaternion.identity, spawnPai);
+
+        // Aplicar travas do prefab (IA externas e fï¿½sica)
+        if (desativarScriptsDoPrefab) DesativarScriptsDoPrefab(agenteGO);
+        if (travarRigidbody)
+        {
+            foreach (var rb in agenteGO.GetComponentsInChildren<Rigidbody>())
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+        }
+
         agente = agenteGO.transform;
+        agente.position = worldStart; // forï¿½a posiï¿½ï¿½o precisa
         pos = start;
 
-        Emit("=== [Coringa] Início da execução perfeita ===");
+        Emit("=== [Coringa] Inï¿½cio da execuï¿½ï¿½o perfeita ===");
         Emit($"Spawn em {pos}. Score={score}");
         LogPercepcoes(pos);
 
-        // 2) Eliminar TODOS os Wumpus (lista pode ter 1 ou 2)
+        // 2) Eliminar TODOS os Wumpus
         yield return StartCoroutine(EliminarTodosWumpus());
 
-        // 3) Ir até o ouro e coletar (se ainda existir)
+        // 3) Ir atï¿½ o ouro e coletar (se ainda existir)
         if (!GridGenerator.ouroColetado)
         {
             Vector2Int oPos = GridGenerator.posicaoOuro;
@@ -103,29 +139,33 @@ public class Agent3PerfectRunner : MonoBehaviour
         else
         {
             ouroJaColetado = true;
-            Emit("[Coleta] Ouro já estava coletado.");
+            Emit("[Coleta] Ouro jï¿½ estava coletado.");
         }
 
-        // 4) Voltar à casa (0,0)
+        // 4) Voltar ï¿½ casa (0,0)
         yield return StartCoroutine(CaminharSeguro(pos, start));
 
-        // 5) Vitória + bônus
+        // 5) Vitï¿½ria + bï¿½nus
         if (todosWumpusEliminados && ouroJaColetado && pos == start)
         {
             score += 2000;
-            Emit($"[Vitória] Retorno à {start} com Wumpus morto(s) e ouro coletado. Bônus aplicado. Score={score}");
+            Emit($"[Vitï¿½ria] Retorno ï¿½ {start} com Wumpus morto(s) e ouro coletado. Bï¿½nus aplicado. Score={score}");
         }
 
         if (logResumoFinal)
-        {
             Emit($"=== [Coringa] Fim === Passos={passosTotais}, Mortes={mortes}, Score final={score} ===");
-        }
-    }
 
-    // ----- Wumpus -----
+        // Encerramento forte
+        _finalizado = true;            // <<<<<< marca fim para travar descontos
+        _executando = false;
+        OnFinished?.Invoke();
+        StopAllCoroutines();
+        yield break;
+    } // <<< fecha ExecBenchmark()
+
+    // ===== Wumpus =====
     private IEnumerator EliminarTodosWumpus()
     {
-        // Enquanto houver wumpus na lista, elimina o mais próximo do ponto atual
         while (GridGenerator.posicoesWumpus.Count > 0)
         {
             Vector2Int alvo = GridGenerator.posicoesWumpus
@@ -140,7 +180,6 @@ public class Agent3PerfectRunner : MonoBehaviour
 
     private IEnumerator EliminarWumpusComSeguranca(Vector2Int wPos)
     {
-        // Tenta ficar adjacente (cardinal) ao Wumpus por rota segura (sem poços) e atirar
         Vector2Int[] adj = new[]
         {
             wPos + Vector2Int.up,
@@ -156,16 +195,11 @@ public class Agent3PerfectRunner : MonoBehaviour
             if (EhPoco(a)) continue;
 
             var path = AStar(pos, a, IsWalkable);
-            if (path != null)
-            {
-                alvoAdj = a;
-                break;
-            }
+            if (path != null) { alvoAdj = a; break; }
         }
 
         if (alvoAdj == null)
         {
-            // fallback: procura um ponto LOS adjacente ao Wumpus alcançável
             var pontoLOS = EncontrarPontoLOS(pos, wPos);
             if (pontoLOS == null)
             {
@@ -182,50 +216,28 @@ public class Agent3PerfectRunner : MonoBehaviour
         }
     }
 
-    public void RunBenchmark()
-{
-    if (_executando) { Emit("[Coringa] Já está em execução."); return; }
-    if (grid == null) grid = FindObjectOfType<GridGenerator>();
-    _executando = true;                 // <— marca como rodando
-    StopAllCoroutines();                // saneia qualquer resto antigo
-    StartCoroutine(ExecBenchmark());
-}
-
-
     private IEnumerator AtirarNoWumpus(Vector2Int wPos, Vector2Int shooter)
     {
         if (!GridGenerator.posicoesWumpus.Contains(wPos))
         {
-            Emit($"[Ação] Wumpus em {wPos} já não está presente (possível duplicidade).");
+            Emit($"[Aï¿½ï¿½o] Wumpus em {wPos} jï¿½ nï¿½o estï¿½ presente.");
             yield break;
         }
 
         Vector2Int dir = DirecaoCardinal(wPos - shooter);
         yield return StartCoroutine(RotacionarAteDir(dir));
 
-        Emit($"[Ação] Tiro do {shooter} em direção ao Wumpus {wPos}.");
-        GridGenerator.EliminarWumpusNaPosicao(wPos); // método estático
+        Emit($"[Aï¿½ï¿½o] Tiro do {shooter} em direï¿½ï¿½o ao Wumpus {wPos}.");
+        GridGenerator.EliminarWumpusNaPosicao(wPos);
         score += 1000;
         Emit($"[Resultado] Wumpus eliminado em {wPos}. Score={score}");
 
-        // Atualiza percepções no tile atual
         LogPercepcoes(pos);
         yield return null;
     }
 
-    if (logResumoFinal)
-    Emit($"=== [Coringa] Fim === Passos={passosTotais}, Mortes={mortes}, Score final={score} ===");
-
-// Sinaliza término e corta tudo
-_executando = false;
-OnFinished?.Invoke();
-StopAllCoroutines();   // garante que nada continua rodando
-yield break;
-
-
     private Vector2Int? EncontrarPontoLOS(Vector2Int from, Vector2Int target)
     {
-        // Prioriza os adjacentes imediatos ao Wumpus
         Vector2Int[] cand = new[]
         {
             target + Vector2Int.up, target + Vector2Int.down,
@@ -241,7 +253,7 @@ yield break;
         return null;
     }
 
-    // ----- Caminhada segura + pontuação/log -----
+    // ===== Caminhada segura + pontuaï¿½ï¿½o/log =====
     private IEnumerator CaminharSeguro(Vector2Int de, Vector2Int ate)
     {
         var path = AStar(de, ate, IsWalkable);
@@ -253,28 +265,34 @@ yield break;
 
         for (int i = 1; i < path.Count; i++)
         {
+            if (agente == null || _finalizado) yield break; // destruï¿½do ou jï¿½ finalizado
+
             Vector2Int prox = path[i];
             Vector3 destino = ParaMundo(prox);
 
             if (logMovimento) Emit($"[Mov] {pos} -> {prox}");
 
-            // Rotação e deslocamento
             Vector3 dir = (destino - agente.position);
             yield return StartCoroutine(RotacionarAte(dir));
+            if (agente == null || _finalizado) yield break;
+
             yield return StartCoroutine(MoverAte(destino));
+            if (agente == null || _finalizado) yield break;
 
+            // conta passo sï¿½ se mudou de tile
+            Vector2Int posAntes = pos;
             pos = prox;
+            if (pos != posAntes)
+            {
+                passosTotais++;
+                DescontarPassoSeAtivo();   // <<<<<< usa trava global
+            }
 
-            // Pontuação por passo
-            passosTotais++;
-            score -= 1;
-
-            // Segurança extra (não deveria ocorrer no coringa)
             if (EhPoco(pos))
             {
                 mortes++;
                 score -= 1000;
-                Emit($"[Morte] Caiu em poço em {pos}. Score={score}");
+                Emit($"[Morte] Caiu em poï¿½o em {pos}. Score={score}");
             }
 
             LogPercepcoes(pos);
@@ -282,7 +300,13 @@ yield break;
         }
     }
 
-    // ----- Percepções -----
+    private void DescontarPassoSeAtivo()
+    {
+        if (!_executando || _finalizado) return;
+        score -= 1;
+    }
+
+    // ===== Percepï¿½ï¿½es =====
     private void LogPercepcoes(Vector2Int p)
     {
         if (!logPercepcao) return;
@@ -294,16 +318,16 @@ yield break;
         bool temBrilho = (!GridGenerator.ouroColetado && p == GridGenerator.posicaoOuro);
 
         var feats = new List<string>();
-        if (emPoco) feats.Add("POÇO(!)");
+        if (emPoco) feats.Add("POï¿½O(!)");
         if (temBrisa) feats.Add("brisa");
         if (temFedor) feats.Add("fedor");
         if (temBrilho) feats.Add("brilho");
 
-        if (feats.Count == 0) Emit($"[Percepção] {p}: (sem sensações)");
-        else Emit($"[Percepção] {p}: " + string.Join(", ", feats));
+        if (feats.Count == 0) Emit($"[Percepï¿½ï¿½o] {p}: (sem sensaï¿½ï¿½es)");
+        else Emit($"[Percepï¿½ï¿½o] {p}: " + string.Join(", ", feats));
     }
 
-    // ----- Utilidades de grid -----
+    // ===== Utilidades de grid =====
     private bool EstaDentro(Vector2Int p) =>
         p.x >= 0 && p.x < MaxX && p.y >= 0 && p.y < MaxY;
 
@@ -329,23 +353,36 @@ yield break;
         return new Vector2Int(0, delta.y < 0 ? -1 : 1);
     }
 
-    // ----- Movimento/Rotação -----
+    // ===== Movimento/Rotaï¿½ï¿½o =====
     private IEnumerator MoverAte(Vector3 worldTarget)
     {
-        while ((agente.position - worldTarget).sqrMagnitude > 0.0004f)
+        while (true)
         {
-            agente.position = Vector3.MoveTowards(agente.position, worldTarget, moveSpeed * Time.deltaTime);
+            if (agente == null || _finalizado) yield break;
+
+            Vector3 posAtual = agente.position;
+            if ((posAtual - worldTarget).sqrMagnitude <= 0.0004f)
+                break;
+
+            agente.position = Vector3.MoveTowards(posAtual, worldTarget, moveSpeed * Time.deltaTime);
             yield return null;
         }
     }
 
     private IEnumerator RotacionarAte(Vector3 worldDir)
     {
+        if (agente == null || _finalizado) yield break;
         worldDir.y = 0f;
         if (worldDir.sqrMagnitude < 1e-6f) yield break;
+
         Quaternion targetRot = Quaternion.LookRotation(worldDir.normalized, Vector3.up);
-        while (Quaternion.Angle(agente.rotation, targetRot) > 0.5f)
+        while (true)
         {
+            if (agente == null || _finalizado) yield break;
+
+            if (Quaternion.Angle(agente.rotation, targetRot) <= 0.5f)
+                break;
+
             agente.rotation = Quaternion.RotateTowards(agente.rotation, targetRot, rotateSpeed * Time.deltaTime);
             yield return null;
         }
@@ -364,7 +401,7 @@ yield break;
         OnLog?.Invoke(msg);
     }
 
-    // ----- A* -----
+    // ===== A* =====
     private static readonly Vector2Int[] cardinais = new[]
     {
         Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right
@@ -434,6 +471,18 @@ yield break;
             var it = data[best].item;
             data.RemoveAt(best);
             return it;
+        }
+    }
+
+    private void DesativarScriptsDoPrefab(GameObject root)
+    {
+        // Desativa todos os MonoBehaviours, exceto componentes ï¿½visuais/comunsï¿½
+        var behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+        foreach (var b in behaviours)
+        {
+            if (b == null) continue;
+            if (b is Animator) continue;  // mantenha animaï¿½ï¿½es
+            b.enabled = false;
         }
     }
 }
